@@ -125,5 +125,6 @@ $RECYCLE.BIN/
 bin/
 containerd/
 dist/
+tools/
 vendor/
 !go.work

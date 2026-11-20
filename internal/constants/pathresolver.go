@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/containers/storage/pkg/homedir"
+	"go.podman.io/storage/pkg/homedir"
 )
 
 var (

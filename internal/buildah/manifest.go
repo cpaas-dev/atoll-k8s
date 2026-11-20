@@ -23,23 +23,22 @@ import (
 	"os"
 	"strings"
 
-	"github.com/containers/buildah/pkg/cli"
-	"github.com/containers/buildah/pkg/parse"
-	"github.com/containers/buildah/util"
-	"github.com/containers/common/libimage"
-	"github.com/containers/common/libimage/manifests"
-	"github.com/containers/common/pkg/auth"
-	cp "github.com/containers/image/v5/copy"
-	"github.com/containers/image/v5/manifest"
-	"github.com/containers/image/v5/transports"
-	"github.com/containers/image/v5/transports/alltransports"
-	"github.com/containers/image/v5/types"
-	"github.com/containers/storage"
-	"github.com/hashicorp/go-multierror"
 	digest "github.com/opencontainers/go-digest"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.podman.io/buildah/pkg/cli"
+	"go.podman.io/buildah/pkg/parse"
+	"go.podman.io/buildah/util"
+	"go.podman.io/common/libimage"
+	"go.podman.io/common/libimage/manifests"
+	"go.podman.io/common/pkg/auth"
+	cp "go.podman.io/image/v5/copy"
+	"go.podman.io/image/v5/manifest"
+	"go.podman.io/image/v5/transports"
+	"go.podman.io/image/v5/transports/alltransports"
+	"go.podman.io/image/v5/types"
+	"go.podman.io/storage"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 )
@@ -590,9 +589,7 @@ func manifestRmCmd(c *cobra.Command, args []string) error {
 		}
 	}
 
-	var multiE *multierror.Error
-	multiE = multierror.Append(multiE, rmiErrors...)
-	return multiE.ErrorOrNil()
+	return errors.Join(rmiErrors...)
 }
 
 func manifestAnnotateCmd(c *cobra.Command, args []string, opts manifestAnnotateOpts) error {

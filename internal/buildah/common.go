@@ -21,15 +21,16 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/containers/buildah"
-	"github.com/containers/buildah/pkg/parse"
-	"github.com/containers/common/pkg/umask"
-	is "github.com/containers/image/v5/storage"
-	"github.com/containers/image/v5/types"
-	"github.com/containers/storage"
-	"github.com/containers/storage/pkg/unshare"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.podman.io/buildah"
+	"go.podman.io/buildah/pkg/parse"
+	"go.podman.io/common/pkg/umask"
+	is "go.podman.io/image/v5/storage"
+	"go.podman.io/image/v5/types"
+	"go.podman.io/storage"
+	"go.podman.io/storage/pkg/homedir"
+	"go.podman.io/storage/pkg/unshare"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/system"
 	wrapunshare "github.com/cpaas-dev/atoll-k8s/internal/unshare"
@@ -177,7 +178,7 @@ func getStore(c *cobra.Command) (storage.Store, error) {
 	if err := setXDGRuntimeDir(); err != nil {
 		return nil, err
 	}
-	options, err := storage.DefaultStoreOptions(unshare.GetRootlessUID() > 0, unshare.GetRootlessUID())
+	options, err := storage.DefaultStoreOptions()
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +257,7 @@ func getStore(c *cobra.Command) (storage.Store, error) {
 // setXDGRuntimeDir sets XDG_RUNTIME_DIR when if it is unset under rootless
 func setXDGRuntimeDir() error {
 	if IsRootless() && os.Getenv("XDG_RUNTIME_DIR") == "" {
-		runtimeDir, err := storage.GetRootlessRuntimeDir(unshare.GetRootlessUID())
+		runtimeDir, err := homedir.GetRuntimeDir()
 		if err != nil {
 			return err
 		}

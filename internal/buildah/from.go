@@ -22,16 +22,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containers/buildah"
-	"github.com/containers/buildah/define"
-	buildahcli "github.com/containers/buildah/pkg/cli"
-	"github.com/containers/buildah/pkg/parse"
-	"github.com/containers/common/pkg/auth"
-	"github.com/containers/common/pkg/config"
-	"github.com/containers/image/v5/types"
-	"github.com/containers/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.podman.io/buildah"
+	"go.podman.io/buildah/define"
+	buildahcli "go.podman.io/buildah/pkg/cli"
+	"go.podman.io/buildah/pkg/parse"
+	"go.podman.io/common/pkg/auth"
+	"go.podman.io/common/pkg/config"
+	"go.podman.io/image/v5/types"
+	"go.podman.io/storage"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/buildah/internal/util"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
@@ -66,17 +66,17 @@ func newDefaultFromReply() *fromReply {
 		pull:      "true",
 		tlsVerify: false,
 		FromAndBudResults: &buildahcli.FromAndBudResults{
-			Devices:    defaultContainerConfig.Containers.Devices,
-			DNSSearch:  defaultContainerConfig.Containers.DNSSearches,
-			DNSServers: defaultContainerConfig.Containers.DNSServers,
-			DNSOptions: defaultContainerConfig.Containers.DNSOptions,
+			Devices:    defaultContainerConfig.Containers.Devices.Get(),
+			DNSSearch:  defaultContainerConfig.Containers.DNSSearches.Get(),
+			DNSServers: defaultContainerConfig.Containers.DNSServers.Get(),
+			DNSOptions: defaultContainerConfig.Containers.DNSOptions.Get(),
 			HTTPProxy:  true,
 			Isolation:  buildahcli.DefaultIsolation(),
 			Retry:      buildahcli.MaxPullPushRetries,
 			RetryDelay: buildahcli.PullPushRetryDelay.String(),
 			ShmSize:    defaultContainerConfig.Containers.ShmSize,
-			Ulimit:     defaultContainerConfig.Containers.DefaultUlimits,
-			Volumes:    defaultContainerConfig.Containers.Volumes,
+			Ulimit:     defaultContainerConfig.Containers.DefaultUlimits.Get(),
+			Volumes:    defaultContainerConfig.Containers.Volumes.Get(),
 		},
 		UserNSResults:    &buildahcli.UserNSResults{},
 		NameSpaceResults: &buildahcli.NameSpaceResults{},
@@ -332,7 +332,7 @@ func doFrom(c *cobra.Command, image string, iopts *fromReply,
 		return nil, err
 	}
 	devices := define.ContainerDevices{}
-	for _, device := range append(defaultContainerConfig.Containers.Devices, iopts.Devices...) {
+	for _, device := range append(defaultContainerConfig.Containers.Devices.Get(), iopts.Devices...) {
 		dev, err := parse.DeviceFromPath(device)
 		if err != nil {
 			return nil, err
@@ -345,7 +345,7 @@ func doFrom(c *cobra.Command, image string, iopts *fromReply,
 		return nil, err
 	}
 
-	commonOpts.Ulimit = append(defaultContainerConfig.Containers.DefaultUlimits, commonOpts.Ulimit...)
+	commonOpts.Ulimit = append(defaultContainerConfig.Containers.DefaultUlimits.Get(), commonOpts.Ulimit...)
 
 	decConfig, err := util.DecryptConfig(iopts.DecryptionKeys)
 	if err != nil {

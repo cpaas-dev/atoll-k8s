@@ -19,8 +19,8 @@ package sync
 import (
 	"testing"
 
-	"github.com/containers/image/v5/types"
-	dtype "github.com/docker/docker/api/types/registry"
+	dtype "github.com/moby/moby/api/types/registry"
+	"go.podman.io/image/v5/types"
 )
 
 func TestImageNameToReferenceClearsStaleDockerAuthConfig(t *testing.T) {

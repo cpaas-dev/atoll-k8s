@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.com/containers/buildah"
+	"go.podman.io/buildah"
 
 	"github.com/cpaas-dev/atoll-k8s/cmd/atollctl/cmd"
 )

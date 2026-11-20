@@ -21,13 +21,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/containers/buildah/pkg/parse"
-	"github.com/containers/common/libimage"
-	"github.com/containers/common/pkg/config"
-	imagestorage "github.com/containers/image/v5/storage"
-	"github.com/containers/image/v5/types"
-	"github.com/containers/storage"
 	"github.com/spf13/cobra"
+	"go.podman.io/buildah/pkg/parse"
+	"go.podman.io/common/libimage"
+	"go.podman.io/common/pkg/config"
+	imagestorage "go.podman.io/image/v5/storage"
+	"go.podman.io/image/v5/types"
+	"go.podman.io/storage"
 )
 
 type Runtime struct {

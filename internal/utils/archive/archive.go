@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/containers/storage/pkg/archive"
 	"github.com/opencontainers/go-digest"
+	"go.podman.io/storage/pkg/archive"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/file"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/flags"

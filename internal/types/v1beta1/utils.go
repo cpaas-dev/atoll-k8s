@@ -17,8 +17,9 @@ limitations under the License.
 package v1beta1
 
 import (
+	"slices"
+
 	"github.com/Masterminds/semver/v3"
-	"golang.org/x/exp/slices"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	stringsutil "github.com/cpaas-dev/atoll-k8s/internal/utils/strings"

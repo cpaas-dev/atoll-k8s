@@ -20,7 +20,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/containers/storage/pkg/unshare"
+	"go.podman.io/storage/pkg/unshare"
 )
 
 const (

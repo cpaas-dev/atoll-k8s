@@ -20,11 +20,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/containers/buildah/define"
-	"github.com/containers/buildah/imagebuildah"
-	buildahcli "github.com/containers/buildah/pkg/cli"
-	"github.com/containers/buildah/util"
 	"github.com/spf13/cobra"
+	"go.podman.io/buildah/define"
+	"go.podman.io/buildah/imagebuildah"
+	buildahcli "go.podman.io/buildah/pkg/cli"
+	"go.podman.io/buildah/util"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 )

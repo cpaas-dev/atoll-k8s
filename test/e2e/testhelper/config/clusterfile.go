@@ -17,6 +17,7 @@ limitations under the License.
 package config
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -24,7 +25,6 @@ import (
 
 	"github.com/cpaas-dev/atoll-k8s/test/e2e/testhelper/utils"
 
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
 
@@ -40,18 +40,18 @@ type Clusterfile struct {
 func (c *Clusterfile) Write() (string, error) {
 	tmpdir, err := utils.MkTmpdir("")
 	if err != nil {
-		return "", errors.WithMessage(err, "create tmpdir failed")
+		return "", fmt.Errorf("create tmpdir failed: %w", err)
 	}
 	clusterfile, err := kubeadm.Asset(c.BinData)
 	if err != nil {
-		return "", errors.WithMessage(err, "read clusterfile failed")
+		return "", fmt.Errorf("read clusterfile failed: %w", err)
 	}
 	replaceClusterfile := string(clusterfile)
 	for k, v := range c.Replaces {
 		replaceClusterfile = strings.ReplaceAll(replaceClusterfile, k, v)
 	}
 	if err = os.WriteFile(tmpdir+"/Clusterfile", []byte(replaceClusterfile), 0644); err != nil {
-		return "", errors.WithMessage(err, "write clusterfile failed")
+		return "", fmt.Errorf("write clusterfile failed: %w", err)
 	}
 	yamls := utils.ToYalms(replaceClusterfile)
 	for _, yamlString := range yamls {
@@ -61,7 +61,7 @@ func (c *Clusterfile) Write() (string, error) {
 		case "Cluster":
 			err = yaml.Unmarshal([]byte(yamlString), &c.Cluster)
 			if err != nil {
-				return "", errors.WithMessage(err, "unmarshal cluster failed")
+				return "", fmt.Errorf("unmarshal cluster failed: %w", err)
 			}
 		}
 	}

@@ -21,9 +21,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cpaas-dev/atoll-k8s/internal/imagecrishim/types"
-	rtype "github.com/docker/docker/api/types/registry"
 	name "github.com/google/go-containerregistry/pkg/name"
+	rtype "github.com/moby/moby/api/types/registry"
+
+	"github.com/cpaas-dev/atoll-k8s/internal/imagecrishim/types"
 )
 
 type manifestStub struct {

@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"time"
 
-	imagecopy "github.com/containers/image/v5/copy"
 	"github.com/spf13/cobra"
+	imagecopy "go.podman.io/image/v5/copy"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/crane"

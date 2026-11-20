@@ -16,9 +16,9 @@ package kube
 
 import (
 	"context"
+	"fmt"
 	"net"
 
-	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -47,7 +47,7 @@ func NewK8sClient(kubeconfig string, apiServer string) (K8s, error) {
 
 	//config, err := clientcmd.RESTConfigFromKubeConfig(kubeconfig)
 	//if err != nil {
-	//	return nil, errors.Wrap(err, "failed to build kube config")
+	//	return nil, fmt.Errorf("failed to build kube config: %w", err)
 	//}
 	//
 	//clientSet, err := kubernetes.NewForConfig(config)
@@ -63,7 +63,7 @@ func NewK8sClient(kubeconfig string, apiServer string) (K8s, error) {
 func (c *K8sClient) ListNodes() (*v1.NodeList, error) {
 	nodes, err := c.Client.Kubernetes().CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get cluster nodes")
+		return nil, fmt.Errorf("failed to get cluster nodes: %w", err)
 	}
 	return nodes, nil
 }
@@ -71,7 +71,7 @@ func (c *K8sClient) ListNodes() (*v1.NodeList, error) {
 func (c *K8sClient) ListNodesByLabel(label string) (*v1.NodeList, error) {
 	nodes, err := c.Client.Kubernetes().CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: label})
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get cluster nodes")
+		return nil, fmt.Errorf("failed to get cluster nodes: %w", err)
 	}
 	return nodes, nil
 }

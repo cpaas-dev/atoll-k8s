@@ -24,13 +24,13 @@ import (
 
 	"github.com/cpaas-dev/atoll-k8s/internal/image"
 
-	"github.com/containers/buildah/pkg/parse"
+	"go.podman.io/buildah/pkg/parse"
 
-	"github.com/containers/buildah"
-	buildahcli "github.com/containers/buildah/pkg/cli"
-	"github.com/containers/buildah/util"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
+	"go.podman.io/buildah"
+	buildahcli "go.podman.io/buildah/pkg/cli"
+	"go.podman.io/buildah/util"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/rand"

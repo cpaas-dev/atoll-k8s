@@ -18,10 +18,12 @@ package commands
 
 import (
 	"fmt"
-	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/crane"
-	"github.com/docker/docker/api/types/registry"
 	"os"
 	"runtime"
+
+	"github.com/moby/moby/api/types/registry"
+
+	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/crane"
 
 	"github.com/spf13/pflag"
 

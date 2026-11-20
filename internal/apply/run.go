@@ -21,8 +21,9 @@ import (
 	"net"
 	"strconv"
 
+	"slices"
+
 	"github.com/spf13/cobra"
-	"golang.org/x/exp/slices"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/apply/applydrivers"
 	"github.com/cpaas-dev/atoll-k8s/internal/apply/processor"

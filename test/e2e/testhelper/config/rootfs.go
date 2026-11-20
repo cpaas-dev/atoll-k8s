@@ -18,14 +18,13 @@ package config
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"path"
 
 	"github.com/cpaas-dev/atoll-k8s/test/e2e/testhelper/template"
 	"github.com/cpaas-dev/atoll-k8s/test/e2e/testhelper/utils"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -51,18 +50,18 @@ type RootfsDockerfile struct {
 func (d *RootfsDockerfile) Write() (string, error) {
 	tmpdir, err := utils.MkTmpdir("")
 	if err != nil {
-		return "", errors.WithMessage(err, "create tmpdir failed")
+		return "", fmt.Errorf("create tmpdir failed: %w", err)
 	}
 	if d.BaseImage == "" {
 		d.BaseImage = "scratch"
 	}
 	if len(d.Images) != 0 {
 		if err := os.MkdirAll(path.Join(tmpdir, "images", "shim"), 0755); err != nil {
-			return "", errors.WithMessage(err, "create images dir failed")
+			return "", fmt.Errorf("create images dir failed: %w", err)
 		}
 		for i, image := range d.Images {
 			if err := os.WriteFile(path.Join(tmpdir, "images", "shim", fmt.Sprintf("image%d", i)), []byte(image), 0644); err != nil {
-				return "", errors.WithMessage(err, "write shim image failed")
+				return "", fmt.Errorf("write shim image failed: %w", err)
 			}
 		}
 		d.Copys = append(d.Copys, "registry registry")
@@ -70,7 +69,7 @@ func (d *RootfsDockerfile) Write() (string, error) {
 
 	if d.KubeadmYaml != "" {
 		if err := os.WriteFile(tmpdir+"/kubeadm.yml", []byte(d.KubeadmYaml), 0644); err != nil {
-			return "", errors.WithMessage(err, "write kubeadm.yml failed")
+			return "", fmt.Errorf("write kubeadm.yml failed: %w", err)
 		}
 		d.Copys = append(d.Copys, "kubeadm.yml etc/")
 	}
@@ -88,7 +87,7 @@ func (d *RootfsDockerfile) Write() (string, error) {
 		return "", errors.New("dockerfile content is not set")
 	}
 	if err := os.WriteFile(tmpdir+"/Dockerfile", []byte(d.dockerfileContent), 0644); err != nil {
-		return "", errors.WithMessage(err, "write RootfsDockerfile failed")
+		return "", fmt.Errorf("write RootfsDockerfile failed: %w", err)
 	}
 	return tmpdir, nil
 }

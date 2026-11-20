@@ -17,11 +17,11 @@ limitations under the License.
 package ssh
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )
@@ -85,7 +85,7 @@ func NewSudoSftpClient(conn *ssh.Client, sudopwd string, opts ...sftp.ClientOpti
 	// Sudo might output a lecture, so looping for either password, error or success prompt
 	prompt, err := getPrompt(stderr)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not get err prompt")
+		return nil, fmt.Errorf("could not get err prompt: %w", err)
 	}
 
 	switch prompt {
@@ -103,7 +103,7 @@ func NewSudoSftpClient(conn *ssh.Client, sudopwd string, opts ...sftp.ClientOpti
 	// Error means the user is not allowed to sudo or something else went wrong.
 	prompt, err = getPrompt(stderr)
 	if err != nil {
-		return nil, errors.Wrap(err, "second stderr read failed")
+		return nil, fmt.Errorf("second stderr read failed: %w", err)
 	}
 
 	switch prompt {

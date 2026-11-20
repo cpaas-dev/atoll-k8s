@@ -22,8 +22,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/containers/buildah"
-	"github.com/containers/storage/pkg/homedir"
+	"go.podman.io/buildah"
+	"go.podman.io/storage/pkg/homedir"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 )

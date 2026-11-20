@@ -20,13 +20,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/containers/buildah"
-	"github.com/containers/buildah/define"
-	"github.com/containers/buildah/pkg/formats"
-	"github.com/containers/buildah/util"
-	"github.com/containers/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.podman.io/buildah"
+	"go.podman.io/buildah/define"
+	"go.podman.io/buildah/pkg/formats"
+	"go.podman.io/buildah/util"
+	"go.podman.io/storage"
 )
 
 var containersHeader = map[string]string{

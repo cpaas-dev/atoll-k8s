@@ -18,23 +18,29 @@ package server
 
 import (
 	"context"
+	"errors"
+	"io"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
-	rtype "github.com/docker/docker/api/types/registry"
-	lru "github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru/v2"
+	rtype "github.com/moby/moby/api/types/registry"
+	"google.golang.org/grpc"
 	api "k8s.io/cri-api/pkg/apis/runtime/v1"
+
+	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 )
 
 type v1ImageService struct {
+	api.UnimplementedImageServiceServer
+
 	imageClient  api.ImageServiceClient
 	authStore    *AuthStore
 	cacheMutex   sync.RWMutex
-	imageCache   *lru.Cache
-	domainCache  *lru.Cache
+	imageCache   *lru.Cache[string, cacheEntry]
+	domainCache  *lru.Cache[string, domainEntry]
 	maxCacheSize int
 	cacheTTL     time.Duration
 	domainTTL    time.Duration
@@ -268,9 +274,8 @@ func (s *v1ImageService) getCachedResult(image string) (cacheEntry, bool) {
 		return cacheEntry{}, false
 	}
 
-	if raw, ok := s.imageCache.Get(image); ok {
-		entry, valid := raw.(cacheEntry)
-		if !valid || time.Now().After(entry.expiry) {
+	if entry, ok := s.imageCache.Get(image); ok {
+		if time.Now().After(entry.expiry) {
 			s.imageCache.Remove(image)
 			s.metrics.recordImageEviction()
 			s.metrics.recordImageMiss()
@@ -336,13 +341,12 @@ func (s *v1ImageService) getCachedDomainMatch(
 	if s.domainCache == nil {
 		return "", nil
 	}
-	raw, ok := s.domainCache.Get(domain)
+	entry, ok := s.domainCache.Get(domain)
 	if !ok {
 		s.metrics.recordDomainMiss()
 		return "", nil
 	}
-	entry, valid := raw.(domainEntry)
-	if !valid || time.Now().After(entry.expiry) {
+	if time.Now().After(entry.expiry) {
 		s.domainCache.Remove(domain)
 		s.metrics.recordDomainEviction()
 		s.metrics.recordDomainMiss()
@@ -446,7 +450,7 @@ func (s *v1ImageService) rebuildCachesLocked() {
 		return
 	}
 
-	imageCache, err := lru.New(s.maxCacheSize)
+	imageCache, err := lru.New[string, cacheEntry](s.maxCacheSize)
 	if err != nil {
 		logger.Warn("failed to create image cache: %v", err)
 		s.imageCache = nil
@@ -459,7 +463,7 @@ func (s *v1ImageService) rebuildCachesLocked() {
 		s.domainCache = nil
 		return
 	}
-	domainCache, err := lru.New(domainSize)
+	domainCache, err := lru.New[string, domainEntry](domainSize)
 	if err != nil {
 		logger.Warn("failed to create domain cache: %v", err)
 		s.domainCache = nil
@@ -500,6 +504,30 @@ func (s *v1ImageService) ListImages(ctx context.Context,
 	}
 
 	return rsp, err
+}
+
+// StreamImages forwards the image stream of the backing image service unchanged, like ListImages.
+func (s *v1ImageService) StreamImages(
+	req *api.StreamImagesRequest,
+	stream grpc.ServerStreamingServer[api.StreamImagesResponse],
+) error {
+	logger.Debug("StreamImages: %+v", req)
+	upstream, err := s.imageClient.StreamImages(stream.Context(), req)
+	if err != nil {
+		return err
+	}
+	for {
+		rsp, err := upstream.Recv()
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if err := stream.Send(rsp); err != nil {
+			return err
+		}
+	}
 }
 
 func (s *v1ImageService) ImageStatus(ctx context.Context,

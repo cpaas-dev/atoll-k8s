@@ -23,11 +23,9 @@ import (
 
 	"github.com/cpaas-dev/atoll-k8s/internal/system"
 
-	"github.com/containers/buildah/pkg/parse"
-	"github.com/containers/common/pkg/config"
-	"github.com/containers/storage/pkg/homedir"
-	"github.com/containers/storage/pkg/unshare"
-	"github.com/containers/storage/types"
+	"go.podman.io/buildah/pkg/parse"
+	"go.podman.io/storage/pkg/homedir"
+	"go.podman.io/storage/pkg/unshare"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/file"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
@@ -37,11 +35,12 @@ var (
 	// use the defaultOverrideConfigFile var as default
 	defaultOverrideConfigFile          = "/etc/containers/storage.conf"
 	DefaultConfigFile                  string
-	DefaultSignaturePolicyPath         = config.DefaultSignaturePolicyPath
+	DefaultSignaturePolicyPath         = "/etc/containers/policy.json"
 	DefaultRootlessSignaturePolicyPath = "containers/policy.json"
 	DefaultGraphRoot                   = "/var/lib/containers/storage"
 	DefaultRegistriesFilePath          = "/etc/containers/registries.conf"
 	DefaultRootlessRegistriesFilePath  = "containers/registries.conf"
+	DefaultRootlessStorageConfigFile   = "containers/storage.conf"
 )
 
 func init() {
@@ -53,9 +52,9 @@ func init() {
 	} else if !unshare.IsRootless() {
 		DefaultConfigFile = defaultOverrideConfigFile
 	} else {
-		var err error
-		DefaultConfigFile, err = types.DefaultConfigFile(true)
+		configHome, err := homedir.GetConfigHome()
 		bailOnError(err, "")
+		DefaultConfigFile = filepath.Join(configHome, DefaultRootlessStorageConfigFile)
 	}
 	// config path
 	if unshare.IsRootless() {

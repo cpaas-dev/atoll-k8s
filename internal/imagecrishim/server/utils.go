@@ -19,10 +19,11 @@ package server
 import (
 	"strings"
 
+	name "github.com/google/go-containerregistry/pkg/name"
+	"github.com/moby/moby/api/types/registry"
+
 	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/crane"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
-	"github.com/docker/docker/api/types/registry"
-	name "github.com/google/go-containerregistry/pkg/name"
 )
 
 // craneGetImageManifest is declared as a var so tests can replace it with a stub implementation.

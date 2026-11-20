@@ -20,13 +20,14 @@ import (
 
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta4"
 
-	"github.com/imdario/mergo"
+	"dario.cat/mergo"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	versionutil "k8s.io/apimachinery/pkg/util/version"
 	kubeproxyconfigv1alpha1 "k8s.io/kube-proxy/config/v1alpha1"
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm" // internal version
-	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
+
+	"github.com/cpaas-dev/atoll-k8s/internal/third_party/kubeadm/v1beta3"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/runtime/decode"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/file"

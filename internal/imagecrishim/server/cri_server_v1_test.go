@@ -21,10 +21,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cpaas-dev/atoll-k8s/internal/imagecrishim/types"
-	rtype "github.com/docker/docker/api/types/registry"
+	rtype "github.com/moby/moby/api/types/registry"
 	"google.golang.org/grpc"
 	api "k8s.io/cri-api/pkg/apis/runtime/v1"
+
+	"github.com/cpaas-dev/atoll-k8s/internal/imagecrishim/types"
 )
 
 func TestRewriteImageDomainMatching(t *testing.T) {
@@ -438,6 +439,14 @@ func (f *fakeImageClient) ListImages(
 	opts ...grpc.CallOption,
 ) (*api.ListImagesResponse, error) {
 	return &api.ListImagesResponse{}, nil
+}
+
+func (f *fakeImageClient) StreamImages(
+	ctx context.Context,
+	in *api.StreamImagesRequest,
+	opts ...grpc.CallOption,
+) (grpc.ServerStreamingClient[api.StreamImagesResponse], error) {
+	return nil, errors.New("StreamImages is not implemented by fakeImageClient")
 }
 
 func (f *fakeImageClient) ImageStatus(

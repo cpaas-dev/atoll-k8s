@@ -19,7 +19,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/containers/image/v5/docker/reference"
+	"go.podman.io/image/v5/docker/reference"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"

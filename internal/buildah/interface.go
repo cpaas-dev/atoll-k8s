@@ -18,16 +18,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/containers/buildah"
-	"github.com/containers/buildah/pkg/parse"
-	"github.com/containers/common/libimage"
-	"github.com/containers/image/v5/transports"
-	"github.com/containers/image/v5/types"
-	"github.com/containers/storage"
-	storagetypes "github.com/containers/storage/types"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.podman.io/buildah"
+	"go.podman.io/buildah/pkg/parse"
+	"go.podman.io/common/libimage"
+	"go.podman.io/image/v5/transports"
+	"go.podman.io/image/v5/types"
+	"go.podman.io/storage"
+	storagetypes "go.podman.io/storage/types"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 )

@@ -23,18 +23,18 @@ import (
 
 	"github.com/cpaas-dev/atoll-k8s/internal/guest"
 
-	"github.com/containers/buildah"
+	"go.podman.io/buildah"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/third_party/expansion"
 	v2 "github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
 
 	stringsutil "github.com/cpaas-dev/atoll-k8s/internal/utils/strings"
 
-	"github.com/containers/buildah/pkg/parse"
-	"github.com/containers/storage/pkg/unshare"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.podman.io/buildah/pkg/parse"
+	"go.podman.io/storage/pkg/unshare"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/file"

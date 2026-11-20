@@ -20,7 +20,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/imdario/mergo"
+	"dario.cat/mergo"
 	"sigs.k8s.io/yaml"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/clusterfile"

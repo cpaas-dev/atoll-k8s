@@ -50,11 +50,15 @@ var (
 )
 
 // k.getKubeVersion can't be empty
-func (k *KubeadmRuntime) setKubeadmAPIVersion() {
+func (k *KubeadmRuntime) setKubeadmAPIVersion() error {
 	kubeVersion := k.getKubeVersionFromImage()
-	version := getterKubeadmAPIVersion(kubeVersion)
+	version, err := getterKubeadmAPIVersion(kubeVersion)
+	if err != nil {
+		return err
+	}
 	k.setAPIVersion(version)
 	k.setKubeVersion(kubeVersion)
+	return nil
 }
 
 func (k *KubeadmRuntime) setKubeVersion(version string) {
@@ -69,22 +73,26 @@ func (k *KubeadmRuntime) setInitConfigurationPullPolicy(policy v1.PullPolicy) {
 	k.kubeadmConfig.InitConfiguration.NodeRegistration.ImagePullPolicy = policy
 }
 
-// GetterKubeadmAPIVersion is covert version to kubeadmAPIServerVersion
-// The support matrix will look something like this now and in the future:
-// v1.22: v1beta2 read-only, writes only v1beta3 Config. Errors if the user tries to use v1beta1 and older
-func getterKubeadmAPIVersion(kubeVersion string) string {
-	v := semver.MustParse(kubeVersion)
-	var apiVersion string
-	switch {
-	// kubernetes gte 1.22
-	case gte(v, V1310):
-		apiVersion = types.KubeadmV1beta4
-	case gte(v, V1220):
-		apiVersion = types.KubeadmV1beta3
-	default:
-		apiVersion = types.KubeadmV1beta3
+// getterKubeadmAPIVersion returns the kubeadm config API version written for kubeVersion:
+// kubeadm.k8s.io/v1beta4 for Kubernetes v1.31 and later, kubeadm.k8s.io/v1beta3 for v1.22 to v1.30.
+// Older versions are not supported.
+func getterKubeadmAPIVersion(kubeVersion string) (string, error) {
+	v, err := semver.NewVersion(kubeVersion)
+	if err != nil {
+		return "", fmt.Errorf("parse kubernetes version %q: %w", kubeVersion, err)
 	}
-	return apiVersion
+	switch {
+	case gte(v, V1310):
+		return types.KubeadmV1beta4, nil
+	case gte(v, V1220):
+		return types.KubeadmV1beta3, nil
+	default:
+		return "", fmt.Errorf(
+			"kubernetes %s is not supported, the minimum supported version is %s",
+			kubeVersion,
+			V1220.Original(),
+		)
+	}
 }
 
 func gte(v1, v2 *semver.Version) bool {
@@ -118,7 +126,9 @@ func (k *KubeadmRuntime) MergeKubeadmConfig(node string) error {
 				return fmt.Errorf("failed to load kubeadm config from clusterfile: %v", err)
 			}
 		}
-		k.setKubeadmAPIVersion()
+		if err := k.setKubeadmAPIVersion(); err != nil {
+			return err
+		}
 		k.setFeatureGatesConfiguration()
 		return k.validateVIP(k.getVip())
 	}()

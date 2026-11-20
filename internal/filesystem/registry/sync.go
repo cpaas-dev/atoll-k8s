@@ -23,8 +23,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containers/image/v5/copy"
-	"github.com/containers/image/v5/types"
+	"go.podman.io/image/v5/copy"
+	"go.podman.io/image/v5/types"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/handler"

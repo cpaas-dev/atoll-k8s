@@ -21,11 +21,12 @@ import (
 	"slices"
 	"strconv"
 
-	"github.com/cpaas-dev/atoll-k8s/internal/clusterfile"
-	"github.com/cpaas-dev/atoll-k8s/internal/utils/iputils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/cpaas-dev/atoll-k8s/internal/clusterfile"
+	"github.com/cpaas-dev/atoll-k8s/internal/utils/iputils"
 )
 
 func (k *KubeadmRuntime) removeStandaloneMaster(host, command string) error {

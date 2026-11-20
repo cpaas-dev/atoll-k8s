@@ -27,6 +27,12 @@ import (
 	"strings"
 	"time"
 
+	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientset "k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/yaml"
+
 	"github.com/cpaas-dev/atoll-k8s/internal/clusterfile"
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 	"github.com/cpaas-dev/atoll-k8s/internal/filesystem/rootfs"
@@ -34,11 +40,6 @@ import (
 	"github.com/cpaas-dev/atoll-k8s/internal/ssh"
 	"github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
-	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientset "k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/yaml"
 )
 
 type modeTransition struct {

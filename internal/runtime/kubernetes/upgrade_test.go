@@ -171,13 +171,19 @@ func TestGetterKubeadmAPIVersion(t *testing.T) {
 	tests := []struct {
 		version string
 		want    string
+		wantErr bool
 	}{
+		{version: "v1.21.14", wantErr: true},
 		{version: "v1.30.9", want: types.KubeadmV1beta3},
 		{version: "v1.31.0", want: types.KubeadmV1beta4},
 	}
 
 	for _, tt := range tests {
-		if got := getterKubeadmAPIVersion(tt.version); got != tt.want {
+		got, err := getterKubeadmAPIVersion(tt.version)
+		if (err != nil) != tt.wantErr {
+			t.Fatalf("getterKubeadmAPIVersion(%q) error = %v, wantErr %v", tt.version, err, tt.wantErr)
+		}
+		if got != tt.want {
 			t.Fatalf("getterKubeadmAPIVersion(%q) = %q, want %q", tt.version, got, tt.want)
 		}
 	}

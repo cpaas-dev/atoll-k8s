@@ -20,9 +20,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/cpaas-dev/atoll-k8s/internal/utils/file"
-	"github.com/docker/docker/api/types/registry"
 	"path"
+
+	"github.com/moby/moby/api/types/registry"
+
+	"github.com/cpaas-dev/atoll-k8s/internal/utils/file"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/save"
 

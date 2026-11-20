@@ -18,6 +18,7 @@ package config
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -26,8 +27,6 @@ import (
 
 	"github.com/cpaas-dev/atoll-k8s/test/e2e/testhelper/template"
 	"github.com/cpaas-dev/atoll-k8s/test/e2e/testhelper/utils"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -56,15 +55,15 @@ type PatchDockerfile struct {
 func (d *PatchDockerfile) Write() (string, error) {
 	tmpdir, err := utils.MkTmpdir("")
 	if err != nil {
-		return "", errors.WithMessage(err, "create tmpdir failed")
+		return "", fmt.Errorf("create tmpdir failed: %w", err)
 	}
 	if len(d.Images) != 0 {
 		if err := os.MkdirAll(path.Join(tmpdir, "images", "shim"), 0755); err != nil {
-			return "", errors.WithMessage(err, "create images dir failed")
+			return "", fmt.Errorf("create images dir failed: %w", err)
 		}
 		for i, image := range d.Images {
 			if err := os.WriteFile(path.Join(tmpdir, "images", "shim", fmt.Sprintf("image%d", i)), []byte(image), 0644); err != nil {
-				return "", errors.WithMessage(err, "write shim image failed")
+				return "", fmt.Errorf("write shim image failed: %w", err)
 			}
 		}
 		d.Copys = append(d.Copys, "registry registry")
@@ -84,7 +83,7 @@ func (d *PatchDockerfile) Write() (string, error) {
 	}
 	logger.Info("dockerfile content: %s", d.dockerfileContent)
 	if err := os.WriteFile(tmpdir+"/Dockerfile", []byte(d.dockerfileContent), 0644); err != nil {
-		return "", errors.WithMessage(err, "write RootfsDockerfile failed")
+		return "", fmt.Errorf("write RootfsDockerfile failed: %w", err)
 	}
 	return tmpdir, nil
 }

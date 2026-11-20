@@ -22,7 +22,7 @@ import (
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/strings"
 
-	"golang.org/x/exp/slices"
+	"slices"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 

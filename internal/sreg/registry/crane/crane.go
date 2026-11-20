@@ -22,8 +22,8 @@ import (
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 
-	"github.com/docker/docker/api/types/registry"
 	"github.com/google/go-containerregistry/pkg/crane"
+	"github.com/moby/moby/api/types/registry"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/sreg/utils/http"
 )

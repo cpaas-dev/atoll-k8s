@@ -19,8 +19,9 @@ import (
 	"net"
 	"strings"
 
+	"slices"
+
 	"github.com/spf13/cobra"
-	"golang.org/x/exp/slices"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/apply/applydrivers"

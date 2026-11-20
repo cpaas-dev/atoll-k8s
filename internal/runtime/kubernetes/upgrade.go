@@ -439,7 +439,11 @@ func (k *KubeadmRuntime) syncRemoteAdminKubeConfigIdentity(version string) error
 			return fmt.Errorf("kubeadm config is not initialized for remote admin.conf sync")
 		}
 		kubeadmConfig := *k.kubeadmConfig
-		kubeadmConfig.SetAPIVersion(getterKubeadmAPIVersion(version))
+		apiVersion, err := getterKubeadmAPIVersion(version)
+		if err != nil {
+			return err
+		}
+		kubeadmConfig.SetAPIVersion(apiVersion)
 		conversion, err := kubeadmConfig.ToConvertedKubeadmConfig()
 		if err != nil {
 			return fmt.Errorf("convert kubeadm config for remote admin.conf sync: %w", err)
@@ -720,7 +724,11 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) (*types.ConvertedKubea
 		kubeadmConfig: defaultKubeadmConfig,
 	}
 	kk.setKubeVersion(version)
-	kk.setAPIVersion(getterKubeadmAPIVersion(version))
+	apiVersion, err := getterKubeadmAPIVersion(version)
+	if err != nil {
+		return nil, false, err
+	}
+	kk.setAPIVersion(apiVersion)
 	kk.setFeatureGatesConfiguration()
 	kk.setInitConfigurationPullPolicy(v1.PullNever)
 

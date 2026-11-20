@@ -19,7 +19,7 @@ package bootstrap
 import (
 	"fmt"
 
-	"golang.org/x/exp/slices"
+	"slices"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/iputils"

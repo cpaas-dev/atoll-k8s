@@ -18,10 +18,11 @@ import (
 	"reflect"
 	"testing"
 
-	containerbuildah "github.com/containers/buildah"
+	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	containerbuildah "go.podman.io/buildah"
+
 	"github.com/cpaas-dev/atoll-k8s/internal/buildah"
 	v2 "github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
-	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type rootfsSelectionBuilder struct {

@@ -24,6 +24,12 @@ import (
 	"slices"
 	"time"
 
+	"github.com/distribution/reference"
+	"golang.org/x/sync/errgroup"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+
 	"github.com/cpaas-dev/atoll-k8s/internal/apply/processor"
 	"github.com/cpaas-dev/atoll-k8s/internal/clusterfile"
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"
@@ -33,11 +39,6 @@ import (
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/iputils"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/yaml"
-	"github.com/distribution/reference"
-	"golang.org/x/sync/errgroup"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 // standaloneInitialized reports whether the request targets an existing

@@ -15,7 +15,7 @@
 package buildah
 
 import (
-	"github.com/containers/common/libimage"
+	"go.podman.io/common/libimage"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/file"
 )

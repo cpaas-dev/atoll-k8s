@@ -19,11 +19,10 @@ import (
 	"errors"
 	"fmt"
 
-	buildahcli "github.com/containers/buildah/pkg/cli"
-	"github.com/containers/buildah/pkg/parse"
-	"github.com/containers/common/libimage"
-	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
+	buildahcli "go.podman.io/buildah/pkg/cli"
+	"go.podman.io/buildah/pkg/parse"
+	"go.podman.io/common/libimage"
 )
 
 type rmiOptions struct {
@@ -114,7 +113,5 @@ func rmiCmd(c *cobra.Command, args []string, iopts rmiOptions) error {
 		}
 	}
 
-	var multiE *multierror.Error
-	multiE = multierror.Append(multiE, rmiErrors...)
-	return multiE.ErrorOrNil()
+	return errors.Join(rmiErrors...)
 }

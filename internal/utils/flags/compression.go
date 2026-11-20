@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/containers/storage/pkg/archive"
+	"go.podman.io/storage/pkg/archive"
 )
 
 type Compression int

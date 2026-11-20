@@ -22,13 +22,14 @@ import (
 	"strings"
 	"time"
 
+	types2 "github.com/moby/moby/api/types/registry"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
+
 	"github.com/cpaas-dev/atoll-k8s/internal/imagecrishim/cri"
 	registry2 "github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/crane"
 	fileutil "github.com/cpaas-dev/atoll-k8s/internal/utils/file"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
-	types2 "github.com/docker/docker/api/types/registry"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
 const (

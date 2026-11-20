@@ -17,9 +17,9 @@ package util
 import (
 	"fmt"
 
-	"github.com/containers/buildah/define"
 	encconfig "github.com/containers/ocicrypt/config"
 	enchelpers "github.com/containers/ocicrypt/helpers"
+	"go.podman.io/buildah/define"
 )
 
 func DecryptConfig(decryptionKeys []string) (*encconfig.DecryptConfig, error) {

@@ -20,8 +20,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"golang.org/x/sync/errgroup"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/iputils"
@@ -233,11 +231,11 @@ func (k *K3s) copyKubeConfigFileToNodes(hosts ...string) error {
 	src := k.pathResolver.AdminFile()
 	data, err := file.ReadAll(src)
 	if err != nil {
-		return errors.WithMessage(err, "read admin.config file failed")
+		return fmt.Errorf("read admin.config file failed: %w", err)
 	}
 	newData := strings.ReplaceAll(string(data), "https://0.0.0.0", fmt.Sprintf("https://%s", constants.DefaultAPIServerDomain))
 	if err = file.WriteFile(src, []byte(newData)); err != nil {
-		return errors.WithMessage(err, "write admin.config file failed")
+		return fmt.Errorf("write admin.config file failed: %w", err)
 	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, node := range hosts {

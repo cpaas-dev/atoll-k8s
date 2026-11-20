@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/containers/buildah/pkg/parse"
-	"github.com/containers/common/pkg/auth"
 	"github.com/spf13/cobra"
+	"go.podman.io/buildah/pkg/parse"
+	"go.podman.io/common/pkg/auth"
 )
 
 func newLogoutCommand() *cobra.Command {

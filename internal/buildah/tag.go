@@ -17,9 +17,9 @@ package buildah
 import (
 	"fmt"
 
-	"github.com/containers/buildah/pkg/parse"
-	"github.com/containers/common/libimage"
 	"github.com/spf13/cobra"
+	"go.podman.io/buildah/pkg/parse"
+	"go.podman.io/common/libimage"
 )
 
 func newTagCommand() *cobra.Command {

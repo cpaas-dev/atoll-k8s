@@ -19,13 +19,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 	"io"
 	"net"
 	"net/http"
 
+	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
+
 	"github.com/distribution/distribution/v3/configuration"
-	dcontext "github.com/distribution/distribution/v3/context"
 	"github.com/distribution/distribution/v3/registry/handlers"
 	"github.com/distribution/distribution/v3/registry/listener"
 
@@ -73,11 +73,11 @@ func NewConfig(root string, port int) (*configuration.Configuration, error) {
 	return configuration.Parse(rd)
 }
 
-func configureLogging(ctx context.Context, config *configuration.Configuration) context.Context {
+// configureLogging configures the logrus standard logger, which distribution uses as its default logger.
+func configureLogging(config *configuration.Configuration) {
 	// disable logging output or increase logging level
-	logger := log.New()
 	if config.Log.AccessLog.Disabled {
-		logger.Out = io.Discard
+		log.SetOutput(io.Discard)
 	}
 	var logLevel log.Level
 	lvl, err := log.ParseLevel(string(config.Log.Level))
@@ -86,15 +86,11 @@ func configureLogging(ctx context.Context, config *configuration.Configuration) 
 	} else {
 		logLevel = lvl
 	}
-	logger.SetLevel(logLevel)
-	logEntry := log.NewEntry(logger)
-	ctx = dcontext.WithLogger(ctx, logEntry)
-	dcontext.SetDefaultLogger(logEntry)
-	return ctx
+	log.SetLevel(logLevel)
 }
 
 func New(ctx context.Context, config *configuration.Configuration) (*http.Server, error) {
-	ctx = configureLogging(ctx, config)
+	configureLogging(config)
 	logger.Debug("registry config: %+v", config)
 	return &http.Server{
 		Handler: handlers.NewApp(ctx, config),

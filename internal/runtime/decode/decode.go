@@ -30,10 +30,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	proxy "k8s.io/kube-proxy/config/v1alpha1"
 	kubelet "k8s.io/kubelet/config/v1beta1"
-	kubeadmv1beta3 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 	kubeadmv1beta4 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta4"
 	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config/v1beta1"
 	proxyconfig "k8s.io/kubernetes/pkg/proxy/apis/config/v1alpha1"
+
+	kubeadmv1beta3 "github.com/cpaas-dev/atoll-k8s/internal/third_party/kubeadm/v1beta3"
 
 	v2 "github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"

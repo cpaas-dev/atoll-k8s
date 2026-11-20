@@ -17,12 +17,12 @@ package save
 import (
 	"context"
 
-	"github.com/containers/image/v5/copy"
-	"github.com/docker/docker/api/types/registry"
+	"github.com/moby/moby/api/types/registry"
+	"go.podman.io/image/v5/copy"
 
 	"github.com/google/go-containerregistry/pkg/name"
 
-	"github.com/docker/docker/pkg/progress"
+	"github.com/moby/moby/client/pkg/progress"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 

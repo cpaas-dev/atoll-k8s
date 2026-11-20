@@ -21,12 +21,11 @@ import (
 	"runtime"
 	"runtime/pprof"
 
-	"github.com/containers/common/pkg/config"
-	"github.com/containers/storage"
-	"github.com/containers/storage/pkg/unshare"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.podman.io/common/pkg/config"
+	"go.podman.io/storage"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/system"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
@@ -73,7 +72,7 @@ func RegisterGlobalFlags(fs *pflag.FlagSet) error {
 	var (
 		defaultStoreDriverOptions []string
 	)
-	storageOptions, err := storage.DefaultStoreOptions(unshare.GetRootlessUID() > 0, unshare.GetRootlessUID())
+	storageOptions, err := storage.DefaultStoreOptions()
 	if err != nil {
 		return err
 	}

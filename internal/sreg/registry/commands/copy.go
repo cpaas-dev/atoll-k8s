@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"time"
 
-	imagecopy "github.com/containers/image/v5/copy"
-	"github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	imagecopy "go.podman.io/image/v5/copy"
+	"go.podman.io/image/v5/types"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/crane"

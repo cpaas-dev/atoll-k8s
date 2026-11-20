@@ -18,7 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/exp/slices"
+	"slices"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"

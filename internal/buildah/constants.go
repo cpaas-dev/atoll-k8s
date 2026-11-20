@@ -18,16 +18,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/containers/buildah/define"
-	"github.com/containers/image/v5/directory"
-	"github.com/containers/image/v5/docker"
-	"github.com/containers/image/v5/docker/archive"
-	ociarchive "github.com/containers/image/v5/oci/archive"
-	"github.com/containers/image/v5/oci/layout"
-	"github.com/containers/image/v5/openshift"
-	"github.com/containers/image/v5/sif"
-	"github.com/containers/image/v5/storage"
-	"github.com/containers/image/v5/tarball"
+	"go.podman.io/buildah/define"
+	"go.podman.io/image/v5/directory"
+	"go.podman.io/image/v5/docker"
+	"go.podman.io/image/v5/docker/archive"
+	ociarchive "go.podman.io/image/v5/oci/archive"
+	"go.podman.io/image/v5/oci/layout"
+	"go.podman.io/image/v5/openshift"
+	"go.podman.io/image/v5/sif"
+	"go.podman.io/image/v5/storage"
+	"go.podman.io/image/v5/tarball"
 )
 
 const (

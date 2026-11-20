@@ -19,6 +19,8 @@ import (
 	"slices"
 	"strings"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/cpaas-dev/atoll-k8s/internal/env"
 	"github.com/cpaas-dev/atoll-k8s/internal/exec"
 	"github.com/cpaas-dev/atoll-k8s/internal/ssh"
@@ -26,7 +28,6 @@ import (
 	v2 "github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/maps"
 	stringsutil "github.com/cpaas-dev/atoll-k8s/internal/utils/strings"
-	"golang.org/x/sync/errgroup"
 )
 
 type Interface interface {

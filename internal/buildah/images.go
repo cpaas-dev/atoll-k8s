@@ -23,15 +23,15 @@ import (
 	"strings"
 	"time"
 
-	buildahcli "github.com/containers/buildah/pkg/cli"
-	"github.com/containers/buildah/pkg/formats"
-	"github.com/containers/buildah/pkg/parse"
-	"github.com/containers/common/libimage"
-	"github.com/containers/image/v5/types"
-	"github.com/containers/storage"
 	"github.com/docker/go-units"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	buildahcli "go.podman.io/buildah/pkg/cli"
+	"go.podman.io/buildah/pkg/formats"
+	"go.podman.io/buildah/pkg/parse"
+	"go.podman.io/common/libimage"
+	"go.podman.io/image/v5/types"
+	"go.podman.io/storage"
 )
 
 const none = "<none>"
@@ -195,7 +195,28 @@ func readImages(store storage.Store, systemContext *types.SystemContext, names [
 		options.Filters = append(options.Filters, "intermediate=false")
 	}
 
-	return runtime.ListImages(ctx, names, options)
+	images, err := runtime.ListImages(ctx, options)
+	if err != nil {
+		return nil, err
+	}
+	if len(names) == 0 {
+		return images, nil
+	}
+	imagesMatchName, err := runtime.ListImagesByNames(names)
+	if err != nil {
+		return nil, err
+	}
+	imagesIDs := map[string]struct{}{}
+	for _, image := range imagesMatchName {
+		imagesIDs[image.ID()] = struct{}{}
+	}
+	var imagesMatchNameAndFilter []*libimage.Image
+	for _, image := range images {
+		if _, ok := imagesIDs[image.ID()]; ok {
+			imagesMatchNameAndFilter = append(imagesMatchNameAndFilter, image)
+		}
+	}
+	return imagesMatchNameAndFilter, nil
 }
 
 func outputHeader(opts imageOptions) string {

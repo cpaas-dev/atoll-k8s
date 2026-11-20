@@ -18,9 +18,9 @@ import (
 	"sync"
 
 	"github.com/docker/cli/cli/config/types"
-	dockertypes "github.com/docker/docker/api/types/registry"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
+	dockertypes "github.com/moby/moby/api/types/registry"
 )
 
 // defaultKeychain implements Keychain with the semantics of the standard Docker

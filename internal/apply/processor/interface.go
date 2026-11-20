@@ -19,8 +19,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/containers/storage"
-	"golang.org/x/exp/slices"
+	"slices"
+
+	"go.podman.io/storage"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/buildah"
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"

@@ -19,7 +19,7 @@ package utils
 import (
 	"fmt"
 
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 	v2 "github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"

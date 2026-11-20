@@ -15,10 +15,11 @@
 package sync
 
 import (
-	"github.com/containers/image/v5/transports/alltransports"
-	"github.com/containers/storage/pkg/unshare"
-	"github.com/pkg/errors"
-	"github.com/syndtr/gocapability/capability"
+	"fmt"
+
+	"github.com/moby/sys/capability"
+	"go.podman.io/image/v5/transports/alltransports"
+	"go.podman.io/storage/pkg/unshare"
 )
 
 var neededCapabilities = []capability.Cap{
@@ -34,9 +35,12 @@ func maybeReexec() error {
 	// With Skopeo we need only the subset of the root capabilities necessary
 	// for pulling an image to the storage.  Do not attempt to create a namespace
 	// if we already have the capabilities we need.
-	capabilities, err := capability.NewPid(0)
+	capabilities, err := capability.NewPid2(0)
 	if err != nil {
-		return errors.Wrapf(err, "error reading the current capabilities sets")
+		return fmt.Errorf("error reading the current capabilities sets: %w", err)
+	}
+	if err := capabilities.Load(); err != nil {
+		return fmt.Errorf("error loading the current capabilities sets: %w", err)
 	}
 	for _, cap := range neededCapabilities {
 		if !capabilities.Get(capability.EFFECTIVE, cap) {

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/docker/docker/api/types/registry"
+	"github.com/moby/moby/api/types/registry"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/crane"
 

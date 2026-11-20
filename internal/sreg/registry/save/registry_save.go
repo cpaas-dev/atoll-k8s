@@ -21,8 +21,8 @@ import (
 	stdsync "sync"
 	"time"
 
-	itype "github.com/containers/image/v5/types"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	itype "go.podman.io/image/v5/types"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/handler"

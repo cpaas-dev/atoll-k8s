@@ -23,11 +23,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/containers/common/libimage"
-	"github.com/containers/common/pkg/config"
-	"github.com/containers/common/pkg/download"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.podman.io/common/libimage"
+	"go.podman.io/common/pkg/config"
+	"go.podman.io/common/pkg/download"
 	"golang.org/x/term"
 )
 
@@ -70,7 +70,7 @@ func load(cmd *cobra.Command, _ []string, loadOpts *loadOptions) error {
 			if err != nil {
 				return err
 			}
-			tmpfile, err := download.FromURL(tmpdir, loadOpts.input)
+			tmpfile, err := download.FromURL(cmd.Context(), tmpdir, loadOpts.input, download.Options{})
 			if err != nil {
 				return err
 			}

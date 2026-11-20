@@ -23,10 +23,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/containers/common/libimage"
-	"github.com/containers/storage/pkg/archive"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.podman.io/common/libimage"
+	"go.podman.io/storage/pkg/archive"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 )

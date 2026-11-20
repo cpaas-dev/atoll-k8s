@@ -24,7 +24,6 @@ var want = []string{
 	`apiVersion: v1
 kind: Pod
 metadata:
-  creationTimestamp: null
   name: kube-atoll-lvscare
   namespace: kube-system
 spec:

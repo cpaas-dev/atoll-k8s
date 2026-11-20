@@ -23,9 +23,9 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/containers/storage"
-	"github.com/containers/storage/pkg/unshare"
 	"github.com/spf13/cobra"
+	"go.podman.io/storage"
+	"go.podman.io/storage/pkg/unshare"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 )

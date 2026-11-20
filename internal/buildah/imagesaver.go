@@ -26,11 +26,11 @@ import (
 	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/save"
 
 	"github.com/containerd/containerd/platforms"
-	"github.com/containers/buildah/pkg/parse"
-	"github.com/containers/image/v5/types"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.podman.io/buildah/pkg/parse"
+	"go.podman.io/image/v5/types"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/sreg/buildimage"
 

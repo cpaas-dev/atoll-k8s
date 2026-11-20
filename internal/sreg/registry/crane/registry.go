@@ -19,11 +19,12 @@ package crane
 import (
 	"context"
 	"fmt"
-	"github.com/containers/image/v5/pkg/docker/config"
-	types2 "github.com/containers/image/v5/types"
-	"github.com/docker/docker/api/types/registry"
+
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
+	"github.com/moby/moby/api/types/registry"
+	"go.podman.io/image/v5/pkg/docker/config"
+	types2 "go.podman.io/image/v5/types"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 

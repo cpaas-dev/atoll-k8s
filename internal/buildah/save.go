@@ -22,9 +22,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/containers/common/libimage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.podman.io/common/libimage"
 )
 
 type saveOptions struct {

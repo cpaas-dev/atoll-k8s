@@ -17,14 +17,15 @@ package save
 import (
 	"context"
 	"fmt"
-	"github.com/containers/image/v5/transports/alltransports"
 	"strings"
 	stdsync "sync"
 	"time"
 
-	"github.com/containers/image/v5/copy"
-	itype "github.com/containers/image/v5/types"
+	"go.podman.io/image/v5/transports/alltransports"
+
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"go.podman.io/image/v5/copy"
+	itype "go.podman.io/image/v5/types"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/handler"

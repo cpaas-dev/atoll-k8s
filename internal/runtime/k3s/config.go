@@ -22,7 +22,7 @@ import (
 
 	"github.com/emirpasic/gods/sets/linkedhashset"
 
-	"github.com/imdario/mergo"
+	"dario.cat/mergo"
 	netutils "k8s.io/utils/net"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"

@@ -26,14 +26,15 @@ import (
 	"strconv"
 	"strings"
 
-	atollkube "github.com/cpaas-dev/atoll-k8s/internal/client-go/kubernetes"
-	"github.com/cpaas-dev/atoll-k8s/internal/runtime/kubernetes/standalone"
-	"github.com/cpaas-dev/atoll-k8s/internal/utils/iputils"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeletconfig "k8s.io/kubelet/config/v1beta1"
 	"sigs.k8s.io/yaml"
+
+	atollkube "github.com/cpaas-dev/atoll-k8s/internal/client-go/kubernetes"
+	"github.com/cpaas-dev/atoll-k8s/internal/runtime/kubernetes/standalone"
+	"github.com/cpaas-dev/atoll-k8s/internal/utils/iputils"
 )
 
 func (k *KubeadmRuntime) initStandaloneMaster() error {

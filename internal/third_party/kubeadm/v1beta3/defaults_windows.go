@@ -1,5 +1,7 @@
+//go:build windows
+
 /*
-Copyright 2022 cuisongliu@qq.com.
+Copyright 2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,30 +16,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package toml
+package v1beta3
 
-import (
-	"github.com/pelletier/go-toml"
-
-	fileutil "github.com/cpaas-dev/atoll-k8s/internal/utils/file"
+const (
+	// DefaultCACertPath defines default location of CA certificate on Windows
+	DefaultCACertPath = "C:/etc/kubernetes/pki/ca.crt"
+	// DefaultContainerRuntimeURLScheme defines default socket url prefix
+	DefaultContainerRuntimeURLScheme = "npipe"
 )
-
-func MarshalFile(file string, obj interface{}) error {
-	data, err := toml.Marshal(obj)
-	if err != nil {
-		return err
-	}
-	return fileutil.WriteFile(file, data)
-}
-
-func UnmarshalFile(file string, obj interface{}) error {
-	metadata, err := fileutil.ReadAll(file)
-	if err != nil {
-		return err
-	}
-	err = toml.Unmarshal(metadata, obj)
-	if err != nil {
-		return err
-	}
-	return nil
-}
