@@ -1,4 +1,4 @@
-name: E2E Sealos Core Test for K3s
+name: E2E Atoll Core Test for K3s
 
 on:
   workflow_dispatch:
@@ -6,16 +6,16 @@ on:
     branches: ["**"]
     paths:
       - ".github/workflows/e2e_test_core_k3s.yml"
-      - "lifecycle/cmd/**"
-      - "lifecycle/pkg/**"
-      - "lifecycle/test/**"
+      - "cmd/**"
+      - "internal/**"
+      - "test/**"
   pull_request:
     branches: ["*"]
     paths:
       - ".github/workflows/e2e_test_core_k3s.yml"
-      - "lifecycle/cmd/**"
-      - "lifecycle/pkg/**"
-      - "lifecycle/test/**"
+      - "cmd/**"
+      - "internal/**"
+      - "test/**"
 
 # Avoid using ${{ github.workflow }} - when called via workflow_call, it inherits the caller's name causing conflicts
 concurrency:
@@ -41,7 +41,7 @@ jobs:
             BASE_REF="${{ github.event.before }}"
           fi
 
-          if bash ./scripts/has-non-test-changes.sh ./lifecycle "${BASE_REF}" "${{ github.sha }}"; then
+          if bash ./scripts/has-non-test-changes.sh . "${BASE_REF}" "${{ github.sha }}"; then
             echo "run_e2e=true" >> "$GITHUB_OUTPUT"
           else
             echo "run_e2e=false" >> "$GITHUB_OUTPUT"
@@ -61,7 +61,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        unit: [E2E_sealos_k3s_basic_test]
+        unit: [E2E_atoll_k3s_basic_test]
     runs-on: ubuntu-24.04
     steps:
       - name: Download image-cri-shim
@@ -69,26 +69,26 @@ jobs:
         with:
           name: image-cri-shim-amd64
           path: /tmp/
-      - name: Download sealctl
+      - name: Download atollctl
         uses: actions/download-artifact@v4
         with:
-          name: sealctl-amd64
+          name: atollctl-amd64
           path: /tmp/
-      - name: Download sealos
+      - name: Download atoll
         uses: actions/download-artifact@v4
         with:
-          name: sealos-amd64
+          name: atoll-amd64
           path: /tmp/
       - name: Download e2e test
         uses: actions/download-artifact@v4
         with:
           name: e2e.test
           path: /tmp/
-      - name: Verify sealos
+      - name: Verify atoll
         run: |
-          sudo chmod a+x /tmp/{sealos,image-cri-shim,sealctl}
-          sudo mv /tmp/sealos /usr/bin/
-          sudo sealos version
+          sudo chmod a+x /tmp/{atoll,image-cri-shim,atollctl}
+          sudo mv /tmp/atoll /usr/bin/
+          sudo atoll version
       - name: Remove containerd && docker
         uses: labring/sealos-action@v0.0.7
         with:

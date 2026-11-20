@@ -2,9 +2,9 @@ name: CI Patch Images Package
 
 env:
   # Common versions
-  GO_VERSION: "1.26.10"
-  DEFAULT_OWNER: "labring"
-  PROJECT_PATH: "./lifecycle"
+  GO_VERSION: "1.27.3"
+  DEFAULT_OWNER: "cpaas-dev"
+  PROJECT_PATH: "."
 
 on:
   workflow_dispatch:
@@ -37,7 +37,7 @@ jobs:
     with:
       arch: amd64,arm64
 
-  container-sealos:
+  container-atoll:
     needs: [call_ci_workflow]
     runs-on: ubuntu-24.04
     permissions:
@@ -65,29 +65,29 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
 
-      - name: Download sealos
+      - name: Download atoll
         uses: actions/download-artifact@v4
         with:
-          name: sealos-amd64
-          path: ${{ env.PROJECT_PATH }}/docker/sealos/bin/sealos-amd64
+          name: atoll-amd64
+          path: ${{ env.PROJECT_PATH }}/docker/atoll/bin/atoll-amd64
 
-      - name: Download sealos
+      - name: Download atoll
         uses: actions/download-artifact@v4
         with:
-          name: sealos-arm64
-          path: ${{ env.PROJECT_PATH }}/docker/sealos/bin/sealos-arm64
+          name: atoll-arm64
+          path: ${{ env.PROJECT_PATH }}/docker/atoll/bin/atoll-arm64
 
-      - name: build (and publish) main sealos image
+      - name: build (and publish) main atoll image
         env:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           GIT_COMMIT_SHORT_SHA: ${{ env.GIT_COMMIT_SHORT_SHA }}
-          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos
-        working-directory: ${{ env.PROJECT_PATH }}/docker/sealos
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/atoll
+        working-directory: ${{ env.PROJECT_PATH }}/docker/atoll
         run: |
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
-          --label "org.opencontainers.image.source=https://github.com/${REPOSITORY_OWNER}/sealos" \
-          --label "org.opencontainers.image.description=sealos container image" \
+          --label "org.opencontainers.image.source=https://github.com/${REPOSITORY_OWNER}/atoll" \
+          --label "org.opencontainers.image.description=atoll container image" \
           --label "org.opencontainers.image.licenses=MIT" \
           --push \
           -t "${DOCKER_REPO}:${GIT_COMMIT_SHORT_SHA}" \
@@ -96,8 +96,8 @@ jobs:
 
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
-          --label "org.opencontainers.image.source=https://github.com/${REPOSITORY_OWNER}/sealos" \
-          --label "org.opencontainers.image.description=sealos container image" \
+          --label "org.opencontainers.image.source=https://github.com/${REPOSITORY_OWNER}/atoll" \
+          --label "org.opencontainers.image.description=atoll container image" \
           --label "org.opencontainers.image.licenses=MIT" \
           --push \
           -t "${DOCKER_REPO}:latest" \
@@ -115,7 +115,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install sealos
+      - name: Install atoll
         run: |
           sudo bash ./.github/scripts/install.sh
       - name: Expose git commit data
@@ -125,22 +125,22 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: patch-image-amd64.tar
-          path: /tmp/sealos/images/
+          path: /tmp/atoll/images/
       - name: Download arm64 patch image tar
         uses: actions/download-artifact@v4
         with:
           name: patch-image-arm64.tar
-          path: /tmp/sealos/images/
+          path: /tmp/atoll/images/
 
       - name: Manifest Cluster Images
         env:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          sudo sealos login -u "${REPOSITORY_OWNER}" -p "${GH_PAT}" --debug ghcr.io
-          sudo sealos load -i /tmp/sealos/images/patch-arm64.tar
-          sudo sealos load -i /tmp/sealos/images/patch-amd64.tar
-          sudo sealos images
+          sudo atoll login -u "${REPOSITORY_OWNER}" -p "${GH_PAT}" --debug ghcr.io
+          sudo atoll load -i /tmp/atoll/images/patch-arm64.tar
+          sudo atoll load -i /tmp/atoll/images/patch-amd64.tar
+          sudo atoll images
           bash ./scripts/manifest-cluster-images.sh
 
       - name: Manifest Cluster Images for latest
@@ -148,7 +148,7 @@ jobs:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           GIT_COMMIT_SHORT_SHA: ${{ env.GIT_COMMIT_SHORT_SHA }}
         run: |
-          sudo sealos tag "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:${GIT_COMMIT_SHORT_SHA}-amd64" "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:latest-amd64"
-          sudo sealos tag "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:${GIT_COMMIT_SHORT_SHA}-arm64" "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:latest-arm64"
-          sudo sealos images
-          bash ./scripts/manifest-cluster-images.sh "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:latest"
+          sudo atoll tag "ghcr.io/${REPOSITORY_OWNER}/atoll-patch:${GIT_COMMIT_SHORT_SHA}-amd64" "ghcr.io/${REPOSITORY_OWNER}/atoll-patch:latest-amd64"
+          sudo atoll tag "ghcr.io/${REPOSITORY_OWNER}/atoll-patch:${GIT_COMMIT_SHORT_SHA}-arm64" "ghcr.io/${REPOSITORY_OWNER}/atoll-patch:latest-arm64"
+          sudo atoll images
+          bash ./scripts/manifest-cluster-images.sh "ghcr.io/${REPOSITORY_OWNER}/atoll-patch:latest"

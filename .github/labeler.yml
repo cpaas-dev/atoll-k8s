@@ -1,7 +1,7 @@
 #Usage in github: https://github.com/actions/labeler
 
 area/command:
-- any: [ 'lifecycle/cmd/**/*' ]
+- any: [ 'cmd/**/*' ]
 
 kind/documentation:
 - any: [ 'docs/**/*' ]
@@ -11,70 +11,69 @@ area/qa:
 
 area/test:
 - '**/*_test.go'
-- 'lifecycle/test/**/*'
+- 'test/**/*'
 
 area/buildah:
-- any: [ 'lifecycle/pkg/buildah/**/*' ]
+- any: [ 'internal/buildah/**/*' ]
 
 area/imageCRIShim:
-- any: [ 'lifecycle/staging/src/github.com/labring/image-cri-shim/**/*' ]
+- any: [ 'internal/imagecrishim/**/*' ]
 
 area/lvscare:
-- any: [ 'lifecycle/staging/src/github.com/labring/lvscare/**/*' ]
+- any: [ 'internal/lvscare/**/*' ]
 
 area/bootstrap:
-- any: [ 'lifecycle/pkg/bootstrap/**/*' ]
+- any: [ 'internal/bootstrap/**/*' ]
 
 area/clusterfile:
-- any: [ 'lifecycle/pkg/clusterfile/**/*' ]
+- any: [ 'internal/clusterfile/**/*' ]
 
 area/config:
-- any: [ 'lifecycle/pkg/config/**/*' ]
-- any: [ 'lifecycle/pkg/env/**/*' ]
-- any: [ 'lifecycle/pkg/template/**/*' ]
+- any: [ 'internal/config/**/*' ]
+- any: [ 'internal/env/**/*' ]
+- any: [ 'internal/template/**/*' ]
 
 area/guest:
-- any: [ 'lifecycle/pkg/guest/**/*' ]
+- any: [ 'internal/guest/**/*' ]
 
 area/env:
-- any: [ 'lifecycle/pkg/system/**/*' ]
+- any: [ 'internal/system/**/*' ]
 
 area/filesystem:
-- any: [ 'lifecycle/pkg/filesystem/**/*' ]
+- any: [ 'internal/filesystem/**/*' ]
 
 area/apply:
-- any: [ 'lifecycle/pkg/apply/**/*' ]
+- any: [ 'internal/apply/**/*' ]
 
 area/check:
-- any: [ 'lifecycle/pkg/checker/**/*' ]
+- any: [ 'internal/checker/**/*' ]
 
 area/ipvs:
-- any: [ 'lifecycle/pkg/ipvs/**/*' ]
+- any: [ 'internal/ipvs/**/*' ]
 
 area/ssh:
-- any: [ 'lifecycle/pkg/ssh/**/*' ]
+- any: [ 'internal/ssh/**/*' ]
 
 area/registry:
-- any: [ 'lifecycle/pkg/registry/**/*' ]
+- any: [ 'internal/registry/**/*' ]
 
 area/runtime:
-- any: [ 'lifecycle/pkg/runtime/**/*' ]
+- any: [ 'internal/runtime/**/*' ]
 
 area/api:
-- any: [ 'lifecycle/pkg/types/**/*' ]
-- any: [ 'lifecycle/**/*_types.go' ]
+- any: [ 'internal/types/**/*' ]
+- any: [ '**/*_types.go' ]
 
 area/lifecycle-management:
-- any: [ 'lifecycle/pkg/**/*' ]
-- any: [ 'lifecycle/staging/**/*' ]
+- any: [ 'internal/**/*' ]
 
 area/ci:
 - 'scripts/**/*'
-- 'lifecycle/scripts/**/*'
-- 'lifecycle/docker/**/*'
+- 'scripts/**/*'
+- 'docker/**/*'
 - '.golangci.yml'
-- 'lifecycle/.goreleaser.yml'
-- 'lifecycle/Makefile'
+- '.goreleaser.yml'
+- 'Makefile'
 
 area/workflow:
 - any: [ '.github/**/*' ]

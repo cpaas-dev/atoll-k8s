@@ -2,8 +2,8 @@ name: Release
 
 env:
   # Common versions
-  GO_VERSION: "1.26.10"
-  DEFAULT_OWNER: "labring"
+  GO_VERSION: "1.27.3"
+  DEFAULT_OWNER: "cpaas-dev"
 
 on:
   workflow_dispatch:
@@ -45,7 +45,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v6
         with:
           args: release --clean
-          workdir: ./lifecycle
+          workdir: .
         env:
           USERNAME: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

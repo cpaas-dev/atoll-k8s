@@ -1,7 +1,7 @@
 name: CI
 
 env:
-  GO_VERSION: "1.26.10"
+  GO_VERSION: "1.27.3"
 
 on:
   workflow_call:
@@ -57,9 +57,9 @@ jobs:
           fi
 
           if [[ -n "${BASE_REF}" ]]; then
-            bash ./scripts/resolve-modules.sh ./lifecycle --changed "${BASE_REF}" "${HEAD_REF}"
+            bash ./scripts/resolve-modules.sh . --changed "${BASE_REF}" "${HEAD_REF}"
           else
-            bash ./scripts/resolve-modules.sh ./lifecycle
+            bash ./scripts/resolve-modules.sh .
           fi
 
   golangci-lint:

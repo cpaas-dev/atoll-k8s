@@ -22,8 +22,8 @@ concurrency:
 
 env:
   # Common versions
-  GO_VERSION: "1.26.10"
-  PROJECT_PATH: "./lifecycle"
+  GO_VERSION: "1.27.3"
+  PROJECT_PATH: "."
 
 jobs:
   coverage:

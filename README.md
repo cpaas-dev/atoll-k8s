@@ -1,91 +1,93 @@
 <p align="center">
-  <a href="https://sealos.io/">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="./docs/img/sealos-left-dark.png" />
-      <source media="(prefers-color-scheme: light)" srcset="./docs/img/sealos-left.png" />
-      <img src="./docs/img/sealos-left.png" alt="Sealos" width="260" />
-    </picture>
-  </a>
+  <img src="./docs/img/cpaas.svg" alt="CPaaS" width="240" />
 </p>
 
-<h1 align="center">Sealos</h1>
+<h1 align="center">Atoll-K8s</h1>
 
-<p align="center">Kubernetes cluster lifecycle management.</p>
+<p align="center">Kubernetes 集群生命周期管理工具</p>
 
-<p align="center"><a href="./README_zh.md">简体中文</a></p>
+<p align="center">简体中文 | <a href="./README_en.md">English</a></p>
 
-## Overview
+## 概述
 
-Sealos is a standalone binary tool with zero dependencies for managing the entire lifecycle of a Kubernetes cluster. It can install a single-node development environment or production-grade highly available clusters, and assemble applications on top of Kubernetes using cluster images.
+Atoll-K8s 是一个零依赖的独立二进制工具，用于管理 Kubernetes 集群的完整生命周期：安装、扩缩容、证书管理、升级与重置。它既能部署单节点开发环境，也能部署生产级高可用集群，并通过集群镜像在 Kubernetes 之上组装应用。
 
-This repository contains the [`lifecycle`](./lifecycle) module:
+本项目基于 [labring/sealos](https://github.com/labring/sealos)（commit [`c0f62a9`](https://github.com/labring/sealos/commit/c0f62a9110450f7069707215acf8e77df0815d37)）修改而来。
 
-- `sealos`: the CLI for creating, scaling, resetting and building clusters and cluster images.
-- `sealctl`: the node-side helper used by `sealos`.
-- `lvscare`: an IPVS-based local load balancer providing high availability for the API server.
-- `image-cri-shim`: recognizes image names automatically, making offline delivery more convenient.
-- `sreg`: a registry tool for cluster images.
+## 组件
 
-## Key features
+| 二进制 | 说明 |
+|---|---|
+| `atoll` | 命令行入口，负责创建、扩缩容、重置集群，以及构建、管理集群镜像 |
+| `atollctl` | 节点侧辅助工具，由 `atoll` 分发到各节点执行 |
+| `lvscare` | 基于 IPVS 的本地负载均衡，为 API Server 提供高可用 |
+| `image-cri-shim` | CRI 代理，自动将镜像名重写到集群私有仓库，便于离线交付 |
 
-- ARM support. Offline packages v1.20 and above support integration with both containerd and Docker.
-- Provides 99-year certificates and supports cluster backup and upgrade.
-- Does not rely on Ansible, HAProxy, or Keepalived.
-- Provides offline installation. Different versions of Kubernetes only require different cluster images.
-- Easy addition/deletion of cluster nodes.
-- Supports cluster images, allowing you to customize and combine the cluster components you need.
-- Uses the SDK of Buildah to standardize the image format, fully compatible with OCI standards.
+## 主要特性
 
-## Get started
+- 单个二进制，不依赖 Ansible、HAProxy 或 Keepalived。
+- 支持 amd64 与 arm64，容器运行时支持 containerd 与 Docker。
+- 离线安装：不同版本的 Kubernetes 只需切换不同的集群镜像。
+- 证书有效期 99 年，支持证书更新、集群备份与升级。
+- 通过 IPVS 本地负载均衡实现 API Server 高可用，资源占用低。
+- 节点增删便捷。
+- 集群镜像基于 Buildah SDK 构建，完全兼容 OCI 标准，可按需组合存储、数据库等组件。
+
+## 快速开始
+
+安装 `atoll`：
 
 ```bash
-$ curl -sfL  https://raw.githubusercontent.com/labring/sealos/v5.1.0/scripts/install.sh \
-    | sh -s v5.1.0 labring/sealos
-# Create a cluster
-$ sealos run labring/kubernetes:v1.25.0-4.2.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
-     --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
-     --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
+curl -sfL https://raw.githubusercontent.com/cpaas-dev/atoll-k8s/main/scripts/install.sh \
+  | sh -s <version> cpaas-dev/atoll-k8s
 ```
 
-Build and run a customized cluster image:
+创建集群：
 
-```shell
-sealos build -t my-kubernetes:v1.25.0 .
-sealos run my-kubernetes:v1.25.0 ...
+```bash
+atoll run <registry>/kubernetes:<version> <registry>/helm:<version> <registry>/calico:<version> \
+  --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
+  --nodes 192.168.64.21,192.168.64.19 \
+  -p <ssh-password>
 ```
 
-See [lifecycle/README.md](./lifecycle/README.md) for more details.
+集群镜像需要为 Atoll-K8s 构建。上游 Sealos 的集群镜像（如 `labring/kubernetes`）依赖 `SEALOS_*` 环境变量和 `sealctl`，不能直接使用。
 
-## 🏘️ Community & support
+构建并运行自定义集群镜像：
 
-- 🌐 Visit the [Sealos Website](https://sealos.io/) for full documentation and useful links.
-- 💬 Join our [Discord Server](https://discord.gg/wdUn538zVP) to chat with the Sealos team and other Sealos users. This is a good place to learn about Sealos and Kubernetes, ask questions, and share your experiences.
-- 🐦 Tweet at @Sealos_io on [X/Twitter](https://twitter.com/Sealos_io) and follow us.
-- 🐞 Create [GitHub Issues](https://github.com/labring/sealos/issues/new/choose) for bug reports and feature requests.
+```bash
+atoll build -t my-kubernetes:v1.30.0 .
+atoll run my-kubernetes:v1.30.0 --masters ... --nodes ...
+```
 
-## 👩‍💻 Contributing & Development
+## 从源码构建
 
-Have a look through [existing issues](https://github.com/labring/sealos/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc) and [Pull Requests](https://github.com/labring/sealos/pulls?q=is%3Apr+is%3Aopen+sort%3Aupdated-desc) that you could help with. If you'd like to request a feature or report a bug, please [create a GitHub Issue](https://github.com/labring/sealos/issues/new/choose) using one of the templates provided.
+环境要求：Linux、Go 1.27 及以上、Make。`atoll` 依赖 CGO（overlay 存储驱动），只能在 Linux 上构建。
 
-📖 [See contribution guide →](./CONTRIBUTING.md)
+```bash
+sudo apt-get install -y pkg-config libdevmapper-dev libbtrfs-dev libgpgme-dev build-essential
+make build BINS=atoll     # 构建单个二进制
+make build                # 构建全部二进制，产物位于 bin/linux_<arch>/
+```
 
-🔧 [See development guide →](./lifecycle/DEVELOPGUIDE.md)
+更多细节见 [开发指南](./DEVELOPGUIDE.md)。
 
-## Links
+## 目录结构
 
-- [Buildah](https://github.com/containers/buildah) The functionalities of Buildah are extensively utilized in Sealos 4.0 to ensure that cluster images are compatible with OCI standard.
+```text
+cmd/        各二进制的入口
+internal/   核心逻辑，包括 lvscare（internal/lvscare）与 image-cri-shim（internal/imagecrishim）
+test/e2e/   端到端测试（独立 Go 模块）
+docker/     镜像构建文件
+scripts/    安装、构建与发布脚本
+```
 
-## 📄 License
+## 许可证
 
-Sealos is licensed under the [Sealos Sustainable Use License](./LICENSE.md), a custom license that allows:
+本项目沿用上游的 [Sealos Sustainable Use License](./LICENSE.md)，它不是标准开源许可证，主要限制如下：
 
-- ✅ Internal business use and personal non-commercial use
-- ❌ Providing cloud services to third parties
+- 允许：企业内部使用、个人非商业使用
+- 禁止：向第三方提供任何形式的云服务（包括私有云与托管服务）
+- 禁止：除免费的非商业分发外，向他人分发本软件
 
-**Not a standard open source license** - please review the [full license terms](./LICENSE.md) before use.
-
-**Contributing**: By contributing, you agree to our [Contributor License Agreement](./CONTRIBUTOR_LICENSE_AGREEMENT.md) and license change terms.
-
-<!-- ## License -->
-
-<!-- [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_large) -->
+使用前请阅读 [完整许可证条款](./LICENSE.md)。源码中保留了上游的版权声明。

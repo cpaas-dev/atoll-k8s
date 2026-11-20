@@ -1,4 +1,4 @@
-name: "\U0001F680 Sealos feature request"
+name: "\U0001F680 Atoll feature request"
 description: Suggest an idea for this project
 labels: kind/feature
 title: 'Feature: brief description of the feature'
@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for suggesting an idea to improve Sealos.
+        Thank you for suggesting an idea to improve Atoll.
         Please fill in as much of the following form as you're able.
   - type: textarea
     attributes:

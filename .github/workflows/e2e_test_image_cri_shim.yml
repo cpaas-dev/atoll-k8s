@@ -1,4 +1,4 @@
-name: E2E Test sealos image-cri-shim service
+name: E2E Test atoll image-cri-shim service
 
 on:
   workflow_dispatch:
@@ -6,16 +6,16 @@ on:
     branches: ["**"]
     paths:
       - ".github/workflows/e2e_test_image_cri_shim.yml"
-      - "lifecycle/cmd/**"
-      - "lifecycle/staging/src/github.com/image-cri-shim/**"
-      - "lifecycle/test/**"
+      - "cmd/**"
+      - "internal/imagecrishim/**"
+      - "test/**"
   pull_request:
     branches: ["*"]
     paths:
       - ".github/workflows/e2e_test_image_cri_shim.yml"
-      - "lifecycle/cmd/**"
-      - "lifecycle/staging/src/github.com/image-cri-shim/**"
-      - "lifecycle/test/**"
+      - "cmd/**"
+      - "internal/imagecrishim/**"
+      - "test/**"
 
 # Avoid using ${{ github.workflow }} - when called via workflow_call, it inherits the caller's name causing conflicts
 concurrency:
@@ -40,16 +40,16 @@ jobs:
         with:
           name: image-cri-shim-amd64
           path: /tmp/
-      - name: Download sealos
+      - name: Download atoll
         uses: actions/download-artifact@v4
         with:
-          name: sealos-amd64
+          name: atoll-amd64
           path: /tmp/
-      - name: Verify sealos
+      - name: Verify atoll
         run: |
-          sudo chmod a+x /tmp/{sealos,image-cri-shim}
-          sudo mv /tmp/sealos /usr/bin/
-          sudo sealos version
+          sudo chmod a+x /tmp/{atoll,image-cri-shim}
+          sudo mv /tmp/atoll /usr/bin/
+          sudo atoll version
       - name: Download e2e test
         uses: actions/download-artifact@v4
         with:

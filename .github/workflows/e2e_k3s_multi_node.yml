@@ -11,14 +11,14 @@ env:
 jobs:
   call_ci_workflow:
     uses: ./.github/workflows/import-patch-image.yml
-    if: ${{ github.repository_owner == 'labring' && github.event.action == 'labeled' && github.event.label.name == 'need-e2e-apply-test' }}
+    if: ${{ github.repository_owner == 'cpaas-dev' && github.event.action == 'labeled' && github.event.label.name == 'need-e2e-apply-test' }}
     with:
       arch: amd64,arm64
       e2e: true
       image: true
       target_pull: true
   e2e_apply_test:
-    if: github.repository_owner == 'labring'
+    if: github.repository_owner == 'cpaas-dev'
     needs: [call_ci_workflow]
     runs-on: ubuntu-24.04
     permissions:
@@ -35,25 +35,25 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
-      - name: Download sealos binary
+      - name: Download atoll binary
         uses: actions/download-artifact@v4
         with:
-          name: sealos-${{ matrix.arch }}
-          path: /tmp/sealos/bin/
-      - name: Download sealos
+          name: atoll-${{ matrix.arch }}
+          path: /tmp/atoll/bin/
+      - name: Download atoll
         uses: actions/download-artifact@v4
         with:
-          name: sealos-amd64
+          name: atoll-amd64
           path: /tmp/verify/
-      - name: Verify sealos
+      - name: Verify atoll
         run: |
-          sudo chmod a+x /tmp/verify/sealos
-          sudo /tmp/verify/sealos version
+          sudo chmod a+x /tmp/verify/atoll
+          sudo /tmp/verify/atoll version
       - name: Download patch image tar
         uses: actions/download-artifact@v4
         with:
           name: patch-image-${{ matrix.arch }}.tar
-          path: /tmp/sealos/images/
+          path: /tmp/atoll/images/
       - name: Download e2e test
         uses: actions/download-artifact@v4
         with:
@@ -63,11 +63,11 @@ jobs:
         id: apply_test
         shell: bash
         env:
-          SEALOS_TEST_ARCH: ${{ matrix.arch }}
-          SEALOS_E2E_TEST_IMAGE_NAME: registry.cn-shanghai.aliyuncs.com/labring/k3s:v1.28.4
-          SEALOS_E2E_TEST_PATCH_IMAGE_TAR: /tmp/sealos/images/patch-${{ matrix.arch }}.tar.gz
-          SEALOS_E2E_TEST_PATCH_IMAGE_NAME: ghcr.io/labring/sealos-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}
-          SEALOS_E2E_TEST_SEALOS_BIN_PATH: /tmp/sealos/bin/sealos
+          ATOLL_TEST_ARCH: ${{ matrix.arch }}
+          ATOLL_E2E_TEST_IMAGE_NAME: registry.cn-shanghai.aliyuncs.com/labring/k3s:v1.28.4
+          ATOLL_E2E_TEST_PATCH_IMAGE_TAR: /tmp/atoll/images/patch-${{ matrix.arch }}.tar.gz
+          ATOLL_E2E_TEST_PATCH_IMAGE_NAME: ghcr.io/cpaas-dev/atoll-k8s-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}
+          ATOLL_E2E_TEST_ATOLL_BIN_PATH: /tmp/atoll/bin/atoll
           ALIYUN_ACCESS_KEY_ID: ${{ secrets.E2E_ALIYUN_ACCESS_KEY_ID }}
           ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.E2E_ALIYUN_ACCESS_KEY_SECRET }}
           ALIYUN_RESOURCE_GROUP_ID: ${{ secrets.E2E_ALIYUN_RESOURCE_GROUP_ID }}
@@ -76,15 +76,15 @@ jobs:
           set -ex
           sudo su
           chmod a+x /tmp/e2e.test
-          gzip /tmp/sealos/images/patch-"${SEALOS_TEST_ARCH}".tar
-          /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_sealos_multi_node_test"
-          echo "test_${SEALOS_TEST_ARCH}_result=success" >> "$GITHUB_OUTPUT"
+          gzip /tmp/atoll/images/patch-"${ATOLL_TEST_ARCH}".tar
+          /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_atoll_multi_node_test"
+          echo "test_${ATOLL_TEST_ARCH}_result=success" >> "$GITHUB_OUTPUT"
   issue_commit:
     needs: [e2e_apply_test]
     runs-on: ubuntu-24.04
     permissions:
       issues: write
-    if: ${{ always() && github.repository_owner == 'labring' && github.event.label.name == 'need-e2e-apply-test' }} #success() || failure()
+    if: ${{ always() && github.repository_owner == 'cpaas-dev' && github.event.label.name == 'need-e2e-apply-test' }} #success() || failure()
     steps:
       - name: Add comment to PR with test status
         uses: peter-evans/create-or-update-comment@v1

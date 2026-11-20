@@ -34,17 +34,17 @@ check_file_exits() {
   done
 }
 
-check_file_exits /usr/bin/sealos
+check_file_exits /usr/bin/atoll
 
 case "$(uname -m)" in
-  x86_64) SEALOS_ARCH=amd64 ;;
-  aarch64|arm64) SEALOS_ARCH=arm64 ;;
+  x86_64) ATOLL_ARCH=amd64 ;;
+  aarch64|arm64) ATOLL_ARCH=arm64 ;;
   *) error "Unsupported architecture: $(uname -m)" ;;
 esac
 
 pushd "$(mktemp -d)" >/dev/null || exit
-  until curl -fsSLo "sealos.tar.gz" "https://github.com/labring/sealos/releases/download/v5.1.2-rc5/sealos_5.1.2-rc5_linux_${SEALOS_ARCH}.tar.gz"; do sleep 3; done
-  tar -zxf sealos.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin
-  rm -rf sealos.tar.gz
-  sealos version
+  until curl -fsSLo "atoll.tar.gz" "https://github.com/cpaas-dev/atoll-k8s/releases/download/v5.1.2-rc5/atoll_5.1.2-rc5_linux_${ATOLL_ARCH}.tar.gz"; do sleep 3; done
+  tar -zxf atoll.tar.gz atoll &&  chmod +x atoll && mv atoll /usr/bin
+  rm -rf atoll.tar.gz
+  atoll version
 popd >/dev/null

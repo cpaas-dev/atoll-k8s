@@ -1,0 +1,20 @@
+{
+    "cSpell.words": [
+        "atollctl",
+        "clusterfile",
+        "deepcopy",
+        "etcdir",
+        "kubeadm",
+        "Kubeadmfile",
+        "logdir",
+        "Lvscare",
+        "metav1",
+        "overriden",
+        "packagedir",
+        "pkidir",
+        "registryedir",
+        "rootfs",
+        "sealos",
+        "v1beta1"
+    ]
+}

@@ -18,9 +18,9 @@ set -o noglob
 
 # Usage:
 #   curl ... | ENV_VAR=... sh -
-#   curl -sfL  https://raw.githubusercontent.com/labring/sealos/main/scripts/install.sh  |  sh -s v5.1.0 labring/sealos
+#   curl -sfL  https://raw.githubusercontent.com/cpaas-dev/atoll-k8s/main/scripts/install.sh  |  sh -s v5.1.0 cpaas-dev/atoll-k8s
 #
-FILE_NAME=sealos
+FILE_NAME=atoll
 BIN_DIR=/usr/bin
 # --- helper functions for logs ---
 info() {
@@ -34,22 +34,22 @@ fatal() {
     exit 1
 }
 
-# --- ensures $SEALOS_URL is empty or begins with https://, exiting fatally otherwise ---
+# --- ensures $ATOLL_URL is empty or begins with https://, exiting fatally otherwise ---
 verify_url() {
-    case "${SEALOS_URL}" in
+    case "${ATOLL_URL}" in
     "") ;;
     https://*) ;;
     http://*) ;;
     *)
-        fatal "Only https:// URLs are supported for SEALOS_URL (have ${SEALOS_URL})"
+        fatal "Only https:// URLs are supported for ATOLL_URL (have ${ATOLL_URL})"
         ;;
     esac
 }
 
-# --- verify an executable sealos binary is installed ---
+# --- verify an executable atoll binary is installed ---
 verify_is_executable() {
-    if [ ! -x ${BIN_DIR}/sealos ]; then
-        fatal "Executable sealos binary not found at ${BIN_DIR}/sealos"
+    if [ ! -x ${BIN_DIR}/atoll ]; then
+        fatal "Executable atoll binary not found at ${BIN_DIR}/atoll"
     fi
 }
 
@@ -96,8 +96,8 @@ get_release_version() {
     info "Using ${VERSION} as release"
     OWN_REPO=$2
     if [ -z "$OWN_REPO" ]; then
-        warn "OWN_REPO is empty, using default repo: labring/sealos"
-        OWN_REPO=labring/sealos
+        warn "OWN_REPO is empty, using default repo: cpaas-dev/atoll-k8s"
+        OWN_REPO=cpaas-dev/atoll-k8s
     fi
     info "Using ${OWN_REPO} as your repo"
 }
@@ -105,7 +105,7 @@ get_release_version() {
 # --- download from github url ---
 download() {
     [ $# -eq 2 ] || fatal 'download needs exactly 2 arguments'
-    info "Downloading sealos, waiting..."
+    info "Downloading atoll, waiting..."
     case $DOWNLOADER in
     curl)
         status_code=$(curl -L "$2" -o "$1" --progress-bar -w "%{http_code}\n") || fatal 'Download failed'
@@ -129,16 +129,16 @@ download_binary() {
 }
 
 setup_tmp() {
-    TMP_DIR=$(mktemp -d -t sealos-install.XXXXXXXXXX)
-    TMP_TAR=${TMP_DIR}/sealos.tar.gz
-    TMP_BIN=${TMP_DIR}/sealos
+    TMP_DIR=$(mktemp -d -t atoll-install.XXXXXXXXXX)
+    TMP_TAR=${TMP_DIR}/atoll.tar.gz
+    TMP_BIN=${TMP_DIR}/atoll
     cleanup() {
         code=$?
         set +e
         trap - EXIT
         rm -rf ${TMP_DIR}
         if [ $code -ne 0 ]; then
-            warn "Failed to install sealos"
+            warn "Failed to install atoll"
         fi
         exit $code
     }
@@ -155,7 +155,7 @@ setup_binary() {
     chmod 755 ${TMP_TAR}
     tar -zxvf ${TMP_TAR} ${FILE_NAME}
     chmod 755 ${FILE_NAME}
-    info "Installing sealos to ${BIN_DIR}/${FILE_NAME}"
+    info "Installing atoll to ${BIN_DIR}/${FILE_NAME}"
     sudo chown $(whoami):$(whoami) ${TMP_BIN}
     sudo mv -f ${TMP_BIN} ${BIN_DIR}/${FILE_NAME}
 

@@ -6,20 +6,20 @@ on:
     branches: ["**"]
     paths:
       - ".github/workflows/e2e_execution_timeout.yml"
-      - "lifecycle/cmd/sealos/cmd/**"
-      - "lifecycle/pkg/ssh/**"
-      - "lifecycle/pkg/exec/**"
-      - "lifecycle/pkg/guest/**"
-      - "lifecycle/test/e2e/**"
+      - "cmd/atoll/cmd/**"
+      - "internal/ssh/**"
+      - "internal/exec/**"
+      - "internal/guest/**"
+      - "test/e2e/**"
   pull_request:
     branches: ["*"]
     paths:
       - ".github/workflows/e2e_execution_timeout.yml"
-      - "lifecycle/cmd/sealos/cmd/**"
-      - "lifecycle/pkg/ssh/**"
-      - "lifecycle/pkg/exec/**"
-      - "lifecycle/pkg/guest/**"
-      - "lifecycle/test/e2e/**"
+      - "cmd/atoll/cmd/**"
+      - "internal/ssh/**"
+      - "internal/exec/**"
+      - "internal/guest/**"
+      - "test/e2e/**"
 
 # Avoid using ${{ github.workflow }} - when called via workflow_call, it inherits the caller's name causing conflicts
 concurrency:
@@ -41,7 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         unit: [
-            E2E_sealos_execution_timeout_test,
+            E2E_atoll_execution_timeout_test,
           ]
     steps:
       - name: Download image-cri-shim
@@ -50,16 +50,16 @@ jobs:
           name: image-cri-shim-amd64
           path: /tmp/
 
-      - name: Download sealctl
+      - name: Download atollctl
         uses: actions/download-artifact@v4
         with:
-          name: sealctl-amd64
+          name: atollctl-amd64
           path: /tmp/
 
-      - name: Download sealos
+      - name: Download atoll
         uses: actions/download-artifact@v4
         with:
-          name: sealos-amd64
+          name: atoll-amd64
           path: /tmp/
 
       - name: Download e2e test
@@ -68,11 +68,11 @@ jobs:
           name: e2e.test
           path: /tmp/
 
-      - name: Verify sealos
+      - name: Verify atoll
         run: |
-          sudo chmod a+x /tmp/{sealos,image-cri-shim,sealctl}
-          sudo mv /tmp/sealos /usr/bin/
-          sudo sealos version
+          sudo chmod a+x /tmp/{atoll,image-cri-shim,atollctl}
+          sudo mv /tmp/atoll /usr/bin/
+          sudo atoll version
 
       - name: Remove containerd & docker
         uses: labring/sealos-action@v0.0.7
@@ -82,8 +82,8 @@ jobs:
       - name: Run execution timeout E2E tests with environment variables
         env:
           UNIT: ${{ matrix.unit }}
-          SEALOS_EXECUTION_TIMEOUT: 600s
-          SEALOS_MAX_RETRY: 10
+          ATOLL_EXECUTION_TIMEOUT: 600s
+          ATOLL_MAX_RETRY: 10
         run: |
           sudo apt-get remove docker docker-engine docker.io containerd runc
           sudo apt-get purge docker-ce docker-ce-cli containerd.io
@@ -107,9 +107,9 @@ jobs:
         if: always()
         run: |
           echo "Verifying timeout configuration via environment variables..."
-          echo "Testing SEALOS_EXECUTION_TIMEOUT environment variable..."
-          SEALOS_EXECUTION_TIMEOUT=600s SEALOS_MAX_RETRY=10 sudo sealos env | grep -i "EXECUTION_TIMEOUT" && echo "✓ EXECUTION_TIMEOUT env var is configured" || echo "✗ EXECUTION_TIMEOUT env var not found"
-          SEALOS_EXECUTION_TIMEOUT=600s SEALOS_MAX_RETRY=10 sudo sealos env | grep -i "MAX_RETRY" && echo "✓ MAX_RETRY env var is configured" || echo "✗ MAX_RETRY env var not found"
+          echo "Testing ATOLL_EXECUTION_TIMEOUT environment variable..."
+          ATOLL_EXECUTION_TIMEOUT=600s ATOLL_MAX_RETRY=10 sudo atoll env | grep -i "EXECUTION_TIMEOUT" && echo "✓ EXECUTION_TIMEOUT env var is configured" || echo "✗ EXECUTION_TIMEOUT env var not found"
+          ATOLL_EXECUTION_TIMEOUT=600s ATOLL_MAX_RETRY=10 sudo atoll env | grep -i "MAX_RETRY" && echo "✓ MAX_RETRY env var is configured" || echo "✗ MAX_RETRY env var not found"
           echo ""
           echo "Environment variables are now used for timeout configuration instead of command-line flags."
-          echo "Set SEALOS_EXECUTION_TIMEOUT and SEALOS_MAX_RETRY to control execution behavior."
+          echo "Set ATOLL_EXECUTION_TIMEOUT and ATOLL_MAX_RETRY to control execution behavior."

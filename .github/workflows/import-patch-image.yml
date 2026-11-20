@@ -2,8 +2,8 @@ name: Import Patch Images Package
 
 env:
   # Common versions
-  GO_VERSION: "1.26.10"
-  PROJECT_PATH: "./lifecycle"
+  GO_VERSION: "1.27.3"
+  PROJECT_PATH: "."
 
 on:
   workflow_call:
@@ -92,7 +92,7 @@ jobs:
         run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
 
       - name: Install Dependencies
-        if: ${{ (matrix.binary == 'sealos' || matrix.binary == 'sealctl') && matrix.arch == 'arm64' }}
+        if: ${{ (matrix.binary == 'atoll' || matrix.binary == 'atollctl') && matrix.arch == 'arm64' }}
         run: |
           sudo apt update && sudo apt install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
 
@@ -171,10 +171,10 @@ jobs:
           name: lvscare-${{ matrix.arch }}
           path: ${{ env.PROJECT_PATH }}/docker/lvscare
 
-      - name: Download sealctl
+      - name: Download atollctl
         uses: actions/download-artifact@v4
         with:
-          name: sealctl-${{ matrix.arch }}
+          name: atollctl-${{ matrix.arch }}
           path: ${{ env.PROJECT_PATH }}/docker/patch
 
       - name: Download image-cri-shim
@@ -183,11 +183,11 @@ jobs:
           name: image-cri-shim-${{ matrix.arch }}
           path: ${{ env.PROJECT_PATH }}/docker/patch
 
-      - name: Download sealos
+      - name: Download atoll
         uses: actions/download-artifact@v4
         with:
-          name: sealos-${{ matrix.arch }}
-          path: ${{ env.PROJECT_PATH }}/docker/sealos
+          name: atoll-${{ matrix.arch }}
+          path: ${{ env.PROJECT_PATH }}/docker/atoll
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -198,7 +198,7 @@ jobs:
         env:
           PROJECT_PATH: ${{ env.PROJECT_PATH }}
         run: |
-          chmod a+x "${PROJECT_PATH}/docker/sealos"/*
+          chmod a+x "${PROJECT_PATH}/docker/atoll"/*
           chmod a+x "${PROJECT_PATH}/docker/patch"/*
           chmod a+x "${PROJECT_PATH}/docker/lvscare"/*
 
@@ -231,6 +231,6 @@ jobs:
         with:
           name: |
             lvscare-${{ matrix.arch }}
-            sealctl-${{ matrix.arch }}
+            atollctl-${{ matrix.arch }}
             image-cri-shim-${{ matrix.arch }}
           failOnError: false
