@@ -157,6 +157,9 @@ func buildCmd(c *cobra.Command, inputArgs []string, sopts saverOptions, iopts bu
 	if err != nil {
 		return err
 	}
+	if err = mergeBaseImageRegistry(getContext(), store, options, containerfiles); err != nil {
+		return err
+	}
 
 	id, ref, err := imagebuildah.BuildDockerfiles(getContext(), store, options, containerfiles...)
 	if err == nil && options.Manifest != "" {

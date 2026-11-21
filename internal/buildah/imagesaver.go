@@ -75,25 +75,38 @@ func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.System
 	if err != nil {
 		return err
 	}
-	is := save.NewImageSaver(getContext(), opts.maxPullProcs, auths, opts.all)
-	isTar := save.NewImageTarSaver(getContext(), opts.maxPullProcs, opts.all)
-	for _, pf := range platforms {
-		if len(images) != 0 {
-			images, err = is.SaveImages(images, registryDir, pf)
-			if err != nil {
-				return fmt.Errorf("failed to save images: %w", err)
-			}
-			logger.Info("saving images %s", strings.Join(images, ", "))
+	selection, err := newSelection(platforms, opts)
+	if err != nil {
+		return err
+	}
+	// Every platform is saved at once, so a multi-platform build stores each image index once
+	// instead of one platform overwriting the other under the same tag.
+	is := save.NewImageSaver(getContext(), opts.maxPullProcs, auths)
+	isTar := save.NewImageTarSaver(getContext(), opts.maxPullProcs)
+	if len(images) != 0 {
+		images, err = is.SaveImages(images, registryDir, selection)
+		if err != nil {
+			return fmt.Errorf("failed to save images: %w", err)
 		}
-		if len(tars) != 0 {
-			tars, err = isTar.SaveImages(tars, registryDir, pf)
-			if err != nil {
-				return fmt.Errorf("failed to save tar images: %w", err)
-			}
-			logger.Info("saving tar images %s", strings.Join(tars, ", "))
+		logger.Info("saving images %s", strings.Join(images, ", "))
+	}
+	if len(tars) != 0 {
+		tars, err = isTar.SaveImages(tars, registryDir, selection)
+		if err != nil {
+			return fmt.Errorf("failed to save tar images: %w", err)
 		}
+		logger.Info("saving tar images %s", strings.Join(tars, ", "))
 	}
 	return nil
+}
+
+// newSelection returns what is saved from image indexes: every platform with --all, otherwise
+// the build platforms.
+func newSelection(platforms []v1.Platform, opts *saverOptions) (save.Selection, error) {
+	if opts.all {
+		return save.SelectAll(), nil
+	}
+	return save.SelectPlatforms(platforms)
 }
 
 func filterIgnoredImages(contextDir string, images []string) ([]string, error) {

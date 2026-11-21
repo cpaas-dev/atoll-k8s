@@ -24,7 +24,9 @@ import (
 	"github.com/moby/moby/api/types/registry"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/crane"
+	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/save"
 
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/pflag"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/file"
@@ -66,4 +68,13 @@ func (opts *registrySaveRawResults) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringSliceVar(&opts.images, "images", []string{}, "images list")
 	fs.StringSliceVar(&opts.tars, "tars", []string{}, "tar list, eg: --tars=docker-archive:/root/config_main.tar@library/config_main")
 	fs.BoolVar(&opts.all, "all", false, "Pull all images if SOURCE-IMAGE is a list")
+}
+
+// selection returns what is saved from image indexes: every platform with --all, otherwise
+// the image of linux/<--arch>.
+func (opts *registrySaveRawResults) selection() (save.Selection, error) {
+	if opts.all {
+		return save.SelectAll(), nil
+	}
+	return save.SelectPlatforms([]v1.Platform{{OS: "linux", Architecture: opts.registryPullArch}})
 }

@@ -28,7 +28,6 @@ import (
 
 	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/save"
 
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/sreg/buildimage"
@@ -52,9 +51,13 @@ func NewRegistryImageSaveCmd(examplePrefix string) *cobra.Command {
 %[1]s save --registry-dir=/tmp/registry --tars=oci-archive:/root/config_main.tar@library/config_main
 %[1]s save --registry-dir=/tmp/registry --images=docker.io/library/busybox:latest`, examplePrefix),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			selection, err := flagsResults.selection()
+			if err != nil {
+				return err
+			}
 			if len(images) > 0 {
-				is := save.NewImageSaver(context.Background(), flagsResults.registryPullMaxPullProcs, auth, flagsResults.all)
-				outImages, err := is.SaveImages(images, flagsResults.registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: flagsResults.registryPullArch})
+				is := save.NewImageSaver(context.Background(), flagsResults.registryPullMaxPullProcs, auth)
+				outImages, err := is.SaveImages(images, flagsResults.registryPullRegistryDir, selection)
 				if err != nil {
 					return err
 				}
@@ -62,8 +65,8 @@ func NewRegistryImageSaveCmd(examplePrefix string) *cobra.Command {
 			}
 
 			if len(tars) > 0 {
-				tarIs := save.NewImageTarSaver(context.Background(), flagsResults.registryPullMaxPullProcs, flagsResults.all)
-				outTars, err := tarIs.SaveImages(tars, flagsResults.registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: flagsResults.registryPullArch})
+				tarIs := save.NewImageTarSaver(context.Background(), flagsResults.registryPullMaxPullProcs)
+				outTars, err := tarIs.SaveImages(tars, flagsResults.registryPullRegistryDir, selection)
 				if err != nil {
 					return err
 				}

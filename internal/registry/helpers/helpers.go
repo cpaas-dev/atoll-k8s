@@ -36,7 +36,7 @@ func GetRegistryInfo(execer exec.Interface, rootfs, defaultRegistry string) *v1b
 	var DefaultConfig = &v1beta1.RegistryConfig{
 		IP:       iputils.GetHostIP(defaultRegistry),
 		Domain:   constants.DefaultRegistryDomain,
-		Port:     "5000",
+		Port:     constants.DefaultRegistryPort,
 		Username: constants.DefaultRegistryUsername,
 		Password: constants.DefaultRegistryPassword,
 		Data:     constants.DefaultRegistryData,

@@ -20,7 +20,6 @@ import "fmt"
 
 const (
 	DefaultBashFmt      = "cd %s && %s"
-	DefaultLnFmt        = "rm -rf %[2]s && ln -s %[1]s %[2]s"
 	CdAndExecCmd        = "cd %s && %s"
 	renderInit          = "init"
 	renderClean         = "clean"

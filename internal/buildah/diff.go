@@ -20,14 +20,17 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"strconv"
 	"strings"
 
+	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.podman.io/common/libimage"
 	"go.podman.io/storage/pkg/archive"
 
+	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 )
 
@@ -180,16 +183,30 @@ func excludeInitTrees(change archive.Change) bool {
 	return !initTrees[change.Path]
 }
 
+// filterPatchFileRequired keeps the changes a patch image must carry: added files, modified
+// files outside /registry and the modified layout files of registry repositories (a new tag
+// modifies index.json). Other modified files under /registry are blobs, which are content
+// addressed and only differ in metadata.
 func filterPatchFileRequired(change archive.Change) bool {
 	switch change.Kind {
 	case archive.ChangeAdd:
 		return true
 	case archive.ChangeModify:
-		if !strings.HasPrefix(change.Path, "/registry") {
+		if !strings.HasPrefix(change.Path, "/registry") || isRegistryLayoutFile(change.Path) {
 			return true
 		}
 	}
 	return false
+}
+
+// isRegistryLayoutFile reports whether name is the index.json or oci-layout file of a
+// repository under /registry.
+func isRegistryLayoutFile(name string) bool {
+	if !strings.HasPrefix(name, "/"+constants.RegistryDirName+"/") {
+		return false
+	}
+	base := path.Base(name)
+	return base == ispec.ImageIndexFile || base == ispec.ImageLayoutFile
 }
 
 func runDiff(c *cobra.Command, args []string, opts *diffOption) error {

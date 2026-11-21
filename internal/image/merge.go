@@ -24,6 +24,7 @@ import (
 
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
+	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 	"github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/maps"
 )
@@ -47,6 +48,17 @@ func escapeDollarSign(s string, cmd bool) string {
 	return buffer.String()
 }
 
+// CopyRegistryInstruction copies the registry root that the merge built in the build context,
+// see MergeDockerfileFromImages.
+const CopyRegistryInstruction = "COPY " + constants.RegistryDirName + " ./" + constants.RegistryDirName
+
+// MergeDockerfileFromImages returns a Dockerfile building an image from scratch that combines
+// the configs of the images in imageObjList and copies their file systems in order.
+//
+// Registry directories are excluded from the copies: a registry root holds a single index.json
+// per repository, so overlaying them keeps only the last one and drops tags. The caller merges
+// the registry roots of the images into the build context instead and appends
+// CopyRegistryInstruction when the merged root exists.
 func MergeDockerfileFromImages(imageObjList []map[string]v1.Image) (string, error) {
 	var labels map[string]string
 	var envs map[string]string
@@ -100,7 +112,7 @@ CMD [{{ .CMDs }}]
 {{- end }}
 {{- if .Images }}
 {{- range .Images }}
-COPY --from={{.}}   . .
+COPY --from={{.}} --exclude={{ $.RegistryDir }} . .
 {{- end }}
 {{- end }}`)
 	if err != nil {
@@ -112,6 +124,7 @@ COPY --from={{.}}   . .
 		"Entrypoints": strings.Join(entrypoints, ","),
 		"CMDs":        strings.Join(cmds, ","),
 		"Images":      imageNames,
+		"RegistryDir": constants.RegistryDirName,
 	}
 
 	out := bytes.NewBuffer(nil)

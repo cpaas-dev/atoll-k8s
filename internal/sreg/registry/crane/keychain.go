@@ -15,6 +15,7 @@
 package crane
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/docker/cli/cli/config/types"
@@ -36,6 +37,10 @@ const (
 	DefaultAuthKey = "https://" + name.DefaultRegistry + "/v1/"
 )
 
+// dockerHubHosts are the other host names Docker Hub credentials are stored under:
+// containers/image (and so GetAuthInfo) returns them as docker.io.
+var dockerHubHosts = []string{"docker.io", "registry-1.docker.io"}
+
 func NewDefaultKeychain(auths map[string]dockertypes.AuthConfig) authn.Keychain {
 	return &defaultKeychain{auths: auths}
 }
@@ -49,10 +54,7 @@ func (dk *defaultKeychain) Resolve(target authn.Resource) (authn.Authenticator, 
 	// https://github.com/google/ko/issues/90
 	// https://github.com/moby/moby/blob/fc01c2b481097a6057bec3cd1ab2d7b4488c50c4/registry/config.go#L397-L404
 	var cfg, empty types.AuthConfig
-	for _, key := range []string{
-		target.String(),
-		target.RegistryStr(),
-	} {
+	for _, key := range authKeys(target) {
 		if auth, ok := dk.auths[key]; ok {
 			cfg = types.AuthConfig(auth)
 			break
@@ -76,4 +78,29 @@ func (dk *defaultKeychain) Resolve(target authn.Resource) (authn.Authenticator, 
 		IdentityToken: cfg.IdentityToken,
 		RegistryToken: cfg.RegistryToken,
 	}), nil
+}
+
+// authKeys returns the auth keys to look up for target, most specific first like
+// containers/image: the repository, its parent namespaces and the registry, for each host
+// name of the registry. Docker Hub (index.docker.io for go-containerregistry) is also looked
+// up under dockerHubHosts and DefaultAuthKey.
+func authKeys(target authn.Resource) []string {
+	registry := target.RegistryStr()
+	hosts := []string{registry}
+	if registry == name.DefaultRegistry {
+		hosts = append(hosts, dockerHubHosts...)
+	}
+	// repository is "/<repository>" for a repository target and empty for a registry target.
+	repository := strings.TrimPrefix(target.String(), registry)
+	var keys []string
+	for _, host := range hosts {
+		for namespace := repository; namespace != ""; namespace = namespace[:strings.LastIndex(namespace, "/")] {
+			keys = append(keys, host+namespace)
+		}
+		keys = append(keys, host)
+	}
+	if registry == name.DefaultRegistry {
+		keys = append(keys, DefaultAuthKey)
+	}
+	return keys
 }

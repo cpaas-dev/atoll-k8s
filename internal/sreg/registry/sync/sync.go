@@ -257,36 +257,6 @@ func RegistryToImage(ctx context.Context, sys *types.SystemContext, src types.Im
 	return allError
 }
 
-func ArchiveToImage(ctx context.Context, sys *types.SystemContext, src types.ImageReference, dst string, selection copy.ImageListSelection) error {
-	logger.Debug("syncing image from %s to %s", src.Transport().Name(), dst)
-	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", dst))
-	if err != nil {
-		return fmt.Errorf("invalid destination name %s: %v", dst, err)
-	}
-	policyContext, err := getPolicyContext()
-	if err != nil {
-		return err
-	}
-	var allError error
-	defer func() {
-		if err = policyContext.Destroy(); err != nil {
-			allError = fmt.Errorf("error tearing down policy context: %v", err)
-		}
-	}()
-	if err = retry.RetryIfNecessary(ctx, func() error {
-		_, err = copy.Image(ctx, policyContext, destRef, src, &copy.Options{
-			SourceCtx:          sys,
-			DestinationCtx:     sys,
-			ImageListSelection: selection,
-			ReportWriter:       os.Stdout,
-		})
-		return err
-	}, getRetryOptions()); err != nil {
-		return err
-	}
-	return allError
-}
-
 func getPolicyContext() (*signature.PolicyContext, error) {
 	policy := &signature.Policy{
 		Default: []signature.PolicyRequirement{

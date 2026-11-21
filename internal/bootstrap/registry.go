@@ -16,6 +16,7 @@ package bootstrap
 
 import (
 	"fmt"
+	"path"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -23,7 +24,6 @@ import (
 	"github.com/cpaas-dev/atoll-k8s/internal/registry/helpers"
 	"github.com/cpaas-dev/atoll-k8s/internal/registry/password"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/iputils"
-	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 )
 
 type registryApplier struct {
@@ -41,12 +41,9 @@ func (a *registryApplier) Apply(ctx Context, host string) error {
 		a.upgrade = password.NewUpgrade(ctx.GetCluster().GetName(), ctx.GetExecer())
 	}
 	rc := helpers.GetRegistryInfo(ctx.GetExecer(), ctx.GetPathResolver().RootFSPath(), ctx.GetCluster().GetRegistryIPAndPort())
-	lnCmd := fmt.Sprintf(constants.DefaultLnFmt, ctx.GetPathResolver().RootFSRegistryPath(), rc.Data)
-	logger.Debug("make soft link: %s", lnCmd)
-	if err := ctx.GetExecer().CmdAsync(host, lnCmd); err != nil {
-		return fmt.Errorf("failed to make link: %v", err)
-	}
-	if err := a.upgrade.UpdateRegistryPasswd(rc, "", host, ""); err != nil {
+	// init-registry.sh installs the htpasswd from the rootfs etc dir into the registry config dir.
+	htpasswdPath := path.Join(ctx.GetPathResolver().RootFSEtcPath(), constants.RegistryHtpasswdFileName)
+	if err := a.upgrade.UpdateRegistryPasswd(rc, htpasswdPath, host); err != nil {
 		return err
 	}
 

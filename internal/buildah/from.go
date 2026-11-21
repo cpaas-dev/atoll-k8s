@@ -352,10 +352,14 @@ func doFrom(c *cobra.Command, image string, iopts *fromReply,
 		return nil, fmt.Errorf("unable to obtain decrypt config: %w", err)
 	}
 
+	// The --retry-delay default comes from containers.conf and is empty unless retry_delay is
+	// set there; like buildah's build options, an empty value leaves the delay unset.
 	var pullPushRetryDelay time.Duration
-	pullPushRetryDelay, err = time.ParseDuration(iopts.RetryDelay)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse value provided %q as --retry-delay: %w", iopts.RetryDelay, err)
+	if iopts.RetryDelay != "" {
+		pullPushRetryDelay, err = time.ParseDuration(iopts.RetryDelay)
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse value provided %q as --retry-delay: %w", iopts.RetryDelay, err)
+		}
 	}
 
 	options := buildah.BuilderOptions{

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 	"github.com/cpaas-dev/atoll-k8s/internal/template"
 	v2 "github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/initsystem"
@@ -58,7 +59,7 @@ func (n *InitSystemChecker) Check(_ *v2.Cluster, phase string) error {
 		return nil
 	}
 
-	serviceNames := []string{"kubelet", "containerd", "cri-docker", "docker", "registry", "image-cri-shim"}
+	serviceNames := []string{"kubelet", "containerd", "cri-docker", "docker", constants.RegistryServiceName, "image-cri-shim"}
 	status.ServiceList = make([]systemStatus, 0)
 	for _, sn := range serviceNames {
 		status.ServiceList = append(status.ServiceList, systemStatus{

@@ -14,41 +14,35 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package registry fills the registries of the registry hosts with the images stored in
+// the registry roots (see internal/registry/ocilayout) of mounted cluster images.
+//
+// Images are pushed through the OCI distribution API from the machine running atoll, so
+// that machine must reach the registry port (registry.yml, default 5000) of every
+// registry host. Registries are addressed as <host IP>:<registry port> over plain HTTP
+// with basic auth, never by the registry domain, which only resolves on cluster hosts.
+// Manifests are pushed as stored, so digests are preserved byte for byte, Docker schema2
+// manifests and manifest lists included.
 package registry
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
+	"net"
+	"os"
 	"path/filepath"
-	"strings"
-	"time"
 
-	"go.podman.io/image/v5/copy"
-	"go.podman.io/image/v5/types"
-	"golang.org/x/sync/errgroup"
-
-	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/handler"
-	"github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/sync"
+	"github.com/google/go-containerregistry/pkg/authn"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 	"github.com/cpaas-dev/atoll-k8s/internal/exec"
 	"github.com/cpaas-dev/atoll-k8s/internal/filesystem"
-	"github.com/cpaas-dev/atoll-k8s/internal/ssh"
+	"github.com/cpaas-dev/atoll-k8s/internal/registry/helpers"
+	"github.com/cpaas-dev/atoll-k8s/internal/registry/ocilayout"
 	v2 "github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
-	"github.com/cpaas-dev/atoll-k8s/internal/utils/file"
-	httputils "github.com/cpaas-dev/atoll-k8s/internal/utils/http"
-	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
-)
-
-const (
-	localhost            = "127.0.0.1"
-	defaultTemporaryPort = "5050"
-	registryPIDFileName  = "registry.pid"
-)
-
-const (
-	httpMode int = iota
-	sshMode
+	"github.com/cpaas-dev/atoll-k8s/internal/utils/iputils"
 )
 
 type impl struct {
@@ -57,255 +51,86 @@ type impl struct {
 	mounts       []v2.MountImage
 }
 
-func shouldSkip(mounts []v2.MountImage) bool {
-	for i := range mounts {
-		if file.IsDir(filepath.Join(mounts[i].MountPoint, constants.RegistryDirName)) {
-			return false
-		}
-	}
-	return true
-}
-
+// Sync pushes the registry roots of the mounts to the registry of every host in hosts
+// (cluster host addresses, ip:ssh-port). The registries must be running, and the machine
+// running atoll must reach every host's registry port. Port and credentials are read from
+// registry.yml on the first host, as Bootstrap does.
 func (s *impl) Sync(ctx context.Context, hosts ...string) error {
-	if shouldSkip(s.mounts) {
+	roots, err := registryRoots(s.mounts)
+	if err != nil {
+		return err
+	}
+	if len(roots) == 0 {
 		return nil
 	}
-	logger.Info("trying default http mode to sync images to hosts %v", hosts)
-
-	type syncOption struct {
-		target string
-		typ    int
+	if len(hosts) == 0 {
+		return errors.New("cannot push images of mounted registry roots: no registry hosts")
 	}
+	rc := helpers.GetRegistryInfo(s.execer, s.pathResolver.RootFSPath(), hosts[0])
+	targets, err := newTargets(hosts, rc)
+	if err != nil {
+		return err
+	}
+	return pushToTargets(ctx, roots, targets)
+}
 
-	syncOptionChan := make(chan *syncOption, len(hosts))
-	var (
-		cancelFuncs         []context.CancelFunc
-		temporaryRegistries []string
-	)
-	defer func() {
-		for _, cancel := range cancelFuncs {
-			cancel()
+// registryRoots returns the registry roots of mounts in mount order, skipping mounts
+// without a registry dir and failing on a root ocilayout.CheckRoot rejects.
+func registryRoots(mounts []v2.MountImage) ([]registryRoot, error) {
+	var roots []registryRoot
+	for _, mount := range mounts {
+		root := filepath.Join(mount.MountPoint, constants.RegistryDirName)
+		exists, err := pathExists(root)
+		if err != nil {
+			return nil, fmt.Errorf("registry dir of image %s: %w", mount.ImageName, err)
 		}
-		for _, host := range temporaryRegistries {
-			if err := s.cleanupRemoteTemporaryRegistry(host); err != nil {
-				logger.Debug("failed to cleanup remote temporary registry on host %s: %v", host, err)
-			}
-		}
-	}()
-
-	// run `atollctl registry serve` to start a temporary registry
-	for i := range hosts {
-		ep := sync.ParseRegistryAddress(trimPortStr(hosts[i]), defaultTemporaryPort)
-		if err := checkRemoteTemporaryRegistry(ctx, hosts[i], defaultTemporaryPort); err == nil {
-			logger.Debug("remote temporary registry %s is already alive, reuse it", ep)
-			syncOptionChan <- &syncOption{target: ep, typ: httpMode}
+		if !exists {
 			continue
 		}
-
-		if err := s.cleanupRemoteTemporaryRegistry(hosts[i]); err != nil {
-			logger.Debug("failed to cleanup stale remote temporary registry on host %s: %v", hosts[i], err)
+		if err := ocilayout.CheckRoot(root); err != nil {
+			return nil, fmt.Errorf("registry dir %s of image %s: %w", root, mount.ImageName, err)
 		}
-
-		registryServeCommand, ok := s.getRegistryServeCommand(hosts[i], defaultTemporaryPort)
-		if !ok {
-			logger.Debug("remote temporary registry is unsupported on host %s, fallback using ssh mode instead", hosts[i])
-			syncOptionChan <- &syncOption{target: hosts[i], typ: sshMode}
-			continue
-		}
-
-		cmdCtx, cancel := context.WithCancel(ctx)
-		cancelFuncs = append(cancelFuncs, cancel)
-		temporaryRegistries = append(temporaryRegistries, hosts[i])
-		go func(ctx context.Context, host, registryServeCommand string) {
-			logger.Debug("running temporary registry on host %s", host)
-			if err := s.execer.CmdAsyncWithContext(ctx, host, registryServeCommand); err != nil {
-				// ignore expected signal killed error when context cancel
-				if !strings.Contains(err.Error(), "signal: killed") && !strings.Contains(err.Error(), "context canceled") {
-					if waitRemoteTemporaryRegistry(ctx, host, defaultTemporaryPort) == nil {
-						logger.Debug("remote temporary registry on host %s is already alive, ignore serve command error: %v", host, err)
-						return
-					}
-					logger.Error(err)
-				}
-			}
-		}(cmdCtx, hosts[i], registryServeCommand)
-		go func(target, ep string) {
-			if err := waitRemoteTemporaryRegistry(ctx, target, defaultTemporaryPort); err != nil {
-				logger.Warn("cannot connect to remote temporary registry %s: %v, fallback using ssh mode instead", ep, err)
-				syncOptionChan <- &syncOption{target: target, typ: sshMode}
-			} else {
-				syncOptionChan <- &syncOption{target: ep, typ: httpMode}
-			}
-		}(hosts[i], ep)
+		roots = append(roots, registryRoot{image: mount.ImageName, path: root})
 	}
-
-	eg, _ := errgroup.WithContext(ctx)
-	for i := 0; i < len(hosts); i++ {
-		opt, ok := <-syncOptionChan
-		if !ok {
-			break
-		}
-		for j := range s.mounts {
-			registryDir := filepath.Join(s.mounts[j].MountPoint, constants.RegistryDirName)
-			if !file.IsDir(registryDir) {
-				continue
-			}
-			eg.Go(func() (err error) {
-				switch opt.typ {
-				case httpMode:
-					err = syncViaHTTP(ctx, opt.target, registryDir)
-				case sshMode:
-					err = syncViaSSH(ctx, s, opt.target, registryDir)
-				}
-				return
-			})
-		}
-	}
-	return eg.Wait()
+	return roots, nil
 }
 
-func (s *impl) cleanupRemoteTemporaryRegistry(host string) error {
-	output, err := s.execer.Cmd(host, getRegistryServeCleanupCommand(s.pathResolver))
-	if err != nil {
-		return fmt.Errorf("%w: %s", err, strings.TrimSpace(string(output)))
+// pathExists reports whether name exists; errors other than non-existence are returned.
+func pathExists(name string) (bool, error) {
+	_, err := os.Stat(name)
+	if err == nil {
+		return true, nil
 	}
-	return nil
+	if errors.Is(err, fs.ErrNotExist) {
+		return false, nil
+	}
+	return false, fmt.Errorf("stat %s: %w", name, err)
 }
 
-func waitRemoteTemporaryRegistry(ctx context.Context, target, port string) error {
-	return waitRemoteTemporaryRegistryWithTimeout(ctx, target, port, 3*time.Second)
+// newTargets returns the registry of every host, addressed by host IP and the port of rc,
+// sharing one transport and the basic auth credentials of rc.
+func newTargets(hosts []string, rc *v2.RegistryConfig) ([]target, error) {
+	if rc.Port == "" || rc.Username == "" || rc.Password == "" {
+		return nil, fmt.Errorf(
+			"registry config needs port, username and password to push images, got port %q and username %q",
+			rc.Port, rc.Username,
+		)
+	}
+	auth := &authn.Basic{Username: rc.Username, Password: rc.Password}
+	transport := newTransport()
+	targets := make([]target, 0, len(hosts))
+	for _, host := range hosts {
+		targets = append(targets, target{
+			address:   net.JoinHostPort(iputils.GetHostIP(host), rc.Port),
+			auth:      auth,
+			transport: transport,
+			backoff:   pushBackoff,
+		})
+	}
+	return targets, nil
 }
 
-func checkRemoteTemporaryRegistry(ctx context.Context, target, port string) error {
-	return waitRemoteTemporaryRegistryWithTimeout(ctx, target, port, 500*time.Millisecond)
-}
-
-func waitRemoteTemporaryRegistryWithTimeout(ctx context.Context, target, port string, timeout time.Duration) error {
-	probeCtx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	ep := sync.ParseRegistryAddress(trimPortStr(target), port)
-	return httputils.WaitUntilEndpointAlive(probeCtx, "http://"+ep)
-}
-
-func trimPortStr(s string) string {
-	if idx := strings.Index(s, ":"); idx > 0 {
-		return s[:idx]
-	}
-	return s
-}
-
-type registryServeFlags struct {
-	portFlag       string
-	pidFile        bool
-	disableLogging bool
-}
-
-func (s *impl) getRegistryServeCommand(host, port string) (string, bool) {
-	output, err := s.execer.Cmd(host, getRegistryServeProbeCommand(s.pathResolver, port))
-	if err != nil {
-		logger.Debug("failed to probe remote temporary registry on host %s: %v", host, err)
-		return "", false
-	}
-
-	fields := strings.Fields(strings.TrimSpace(string(output)))
-	if len(fields) == 0 {
-		return "", false
-	}
-	flags := registryServeFlags{portFlag: fields[0]}
-	switch flags.portFlag {
-	case "--port", "-p":
-	default:
-		return "", false
-	}
-	for _, field := range fields[1:] {
-		switch field {
-		case "--pid-file":
-			flags.pidFile = true
-		case "--disable-logging":
-			flags.disableLogging = true
-		}
-	}
-	return getRegistryServeCommand(s.pathResolver, port, flags), true
-}
-
-func getRegistryServeProbeCommand(pathResolver constants.PathResolver, port string) string {
-	return fmt.Sprintf("if %[1]s registry serve filesystem --port %[2]s --help >/dev/null 2>&1; then printf -- '--port'; elif %[1]s registry serve filesystem -p %[2]s --help >/dev/null 2>&1; then printf -- '-p'; else exit 0; fi; if %[1]s registry serve filesystem --pid-file %[3]s --help >/dev/null 2>&1; then printf ' --pid-file'; fi; if %[1]s registry serve filesystem --disable-logging=true --help >/dev/null 2>&1; then printf ' --disable-logging'; fi",
-		pathResolver.RootFSAtollctlPath(), port, registryPIDFile(pathResolver),
-	)
-}
-
-func getRegistryServeCommand(pathResolver constants.PathResolver, port string, flags registryServeFlags) string {
-	args := []string{
-		pathResolver.RootFSAtollctlPath(),
-		"registry", "serve", "filesystem",
-		flags.portFlag, port,
-	}
-	if flags.pidFile {
-		args = append(args, "--pid-file", registryPIDFile(pathResolver))
-	}
-	if flags.disableLogging {
-		args = append(args, "--disable-logging=true")
-	}
-	args = append(args, pathResolver.RootFSRegistryPath())
-	// Replace the shell so cancellation also stops a registry that has not
-	// finished startup or written its PID file yet.
-	return "exec " + strings.Join(args, " ") + " >/dev/null 2>&1"
-}
-
-func getRegistryServeCleanupCommand(pathResolver constants.PathResolver) string {
-	return fmt.Sprintf("if [ -s %[1]s ]; then pid=$(cat %[1]s 2>/dev/null || true); if [ -n \"$pid\" ] && [ -r \"/proc/$pid/cmdline\" ]; then cmd=$(tr '\\000' ' ' < \"/proc/$pid/cmdline\" 2>/dev/null || true); case \"$cmd\" in *\"%[2]s registry serve filesystem\"*\"%[3]s\"*) kill \"$pid\" 2>/dev/null || true;; esac; fi; rm -f %[1]s; fi",
-		registryPIDFile(pathResolver),
-		pathResolver.RootFSAtollctlPath(),
-		pathResolver.RootFSRegistryPath(),
-	)
-}
-
-func registryPIDFile(pathResolver constants.PathResolver) string {
-	return filepath.Join(pathResolver.RootFSPath(), registryPIDFileName)
-}
-
-func syncViaSSH(_ context.Context, s *impl, target string, localDir string) error {
-	return ssh.CopyDir(s.execer, target, localDir, s.pathResolver.RootFSRegistryPath(), nil)
-}
-
-func syncViaHTTP(ctx context.Context, target string, localDir string) error {
-	sys := &types.SystemContext{
-		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
-	}
-
-	config, err := handler.NewConfig(localDir, 0)
-	if err != nil {
-		return err
-	}
-	config.Log.AccessLog.Disabled = true
-	errCh := handler.Run(ctx, config)
-	defer func() {
-		// for notifying shutdown http Server
-		errCh <- nil
-	}()
-
-	src := sync.ParseRegistryAddress(localhost, config.HTTP.Addr)
-	probeCtx, cancel := context.WithTimeout(ctx, time.Second*3)
-	defer cancel()
-	if err = httputils.WaitUntilEndpointAlive(probeCtx, "http://"+src); err != nil {
-		return err
-	}
-	opts := &sync.Options{
-		SystemContext: sys,
-		Source:        src,
-		Target:        target,
-		SelectionOptions: []copy.ImageListSelection{
-			copy.CopyAllImages, copy.CopySystemImage,
-		},
-		OmitError: true,
-	}
-
-	if err = sync.ToRegistry(ctx, opts); err != nil && !strings.Contains(err.Error(), "manifest unknown") {
-		return err
-	}
-	return nil
-}
-
+// New returns a syncer pushing the registry roots of mounts; see Sync.
 func New(pathResolver constants.PathResolver, execer exec.Interface, mounts []v2.MountImage) filesystem.RegistrySyncer {
 	return &impl{pathResolver, execer, mounts}
 }

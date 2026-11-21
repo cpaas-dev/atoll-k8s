@@ -15,12 +15,14 @@
 package crane
 
 import (
+	"context"
 	"runtime"
 	"strings"
 
 	name2 "github.com/google/go-containerregistry/pkg/name"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/moby/moby/api/types/registry"
@@ -30,6 +32,16 @@ import (
 
 func GetCraneOptions(authConfig map[string]registry.AuthConfig) []crane.Option {
 	return []crane.Option{crane.WithAuthFromKeychain(NewDefaultKeychain(authConfig)), crane.WithTransport(http.DefaultSkipVerify)}
+}
+
+// GetRemoteOptions returns the go-containerregistry remote options matching GetCraneOptions:
+// credentials from authConfig and a transport that skips TLS verification, bound to ctx.
+func GetRemoteOptions(ctx context.Context, authConfig map[string]registry.AuthConfig) []remote.Option {
+	return []remote.Option{
+		remote.WithContext(ctx),
+		remote.WithAuthFromKeychain(NewDefaultKeychain(authConfig)),
+		remote.WithTransport(http.DefaultSkipVerify),
+	}
 }
 
 func GetImageManifestFromAuth(image string, authConfig map[string]registry.AuthConfig) (newImage string, data []byte, cfg *registry.AuthConfig, err error) {

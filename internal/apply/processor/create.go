@@ -70,8 +70,9 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 		c.PreProcess,
 		c.RunConfig,
 		c.MountRootfs,
-		c.MirrorRegistry,
+		// Bootstrap starts the registries that MirrorRegistry pushes to.
 		c.Bootstrap,
+		c.MirrorRegistry,
 		// c.GetPhasePluginFunc(plugin.PhasePreInit),
 		c.Init,
 		c.Join,

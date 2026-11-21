@@ -24,11 +24,20 @@ const (
 	LvsCareStaticPodName    = "kube-atoll-lvscare"
 	YamlFileSuffix          = "yaml"
 	DefaultRegistryDomain   = "atoll.hub"
+	DefaultRegistryPort     = "5000"
 	DefaultRegistryUsername = "admin"
 	DefaultRegistryPassword = "passw0rd"
 	DefaultRegistryData     = "/var/lib/registry"
 	DefaultLvscareDomain    = "lvscare.node.ip"
 	DefaultHostsPath        = "/etc/hosts"
+)
+
+// Registry node contract fulfilled by the cluster image, see README.md.
+const (
+	RegistryServiceName      = "zot"
+	RegistryConfigDir        = "/etc/registry"
+	RegistryConfigFileName   = "registry_config.json"
+	RegistryHtpasswdFileName = "registry_htpasswd"
 )
 
 const (

@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/cpaas-dev/atoll-k8s/internal/imagecrishim/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/yaml"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 	"github.com/cpaas-dev/atoll-k8s/internal/exec"
+	"github.com/cpaas-dev/atoll-k8s/internal/imagecrishim/types"
 	"github.com/cpaas-dev/atoll-k8s/internal/registry/helpers"
 	"github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/file"
@@ -33,16 +33,9 @@ import (
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/passwd"
 )
 
-type RegistryType string
-
-const (
-	RegistryTypeDocker     RegistryType = "docker"
-	RegistryTypeContainerd RegistryType = "containerd"
-	RegistryTypeRegistry   RegistryType = "registry"
-)
-
 type Upgrade interface {
-	UpdateRegistryPasswd(rc *v1beta1.RegistryConfig, target, host string, registryType RegistryType) error
+	UpdateRegistryPasswd(rc *v1beta1.RegistryConfig, target, host string) error
+	RestartRegistry(host string) error
 	UpdateRegistryConfig(rc *v1beta1.RegistryConfig, target, host string) error
 	UpdateImageShimConfig(rc *types.Config, target, host string) error
 }
@@ -96,36 +89,25 @@ func (m *upgrade) UpdateImageShimConfig(rc *types.Config, target, host string) e
 	}
 	return nil
 }
-func (m *upgrade) UpdateRegistryPasswd(rc *v1beta1.RegistryConfig, target, host string, registryType RegistryType) error {
+func (m *upgrade) UpdateRegistryPasswd(rc *v1beta1.RegistryConfig, target, host string) error {
 	htpasswdPath, err := m.mk.configLocalHtpasswd(path.Join(constants.ClusterDir(m.Cluster), constants.EtcDirName), rc)
 	if err != nil {
 		return err
 	}
 	if target == "" {
-		target = path.Join(constants.GetRootWorkDir(m.Cluster), constants.EtcDirName, "registry_htpasswd")
+		return fmt.Errorf("update registry htpasswd target path is empty")
 	}
 	if len(htpasswdPath) > 0 {
 		if err = m.SSHInterface.Copy(host, htpasswdPath, target); err != nil {
 			return err
 		}
 	}
-	if registryType != "" {
-		switch registryType {
-		case RegistryTypeDocker:
-			if err = m.SSHInterface.CmdAsync(host, "docker restart atoll-registry"); err != nil {
-				return err
-			}
-		case RegistryTypeContainerd:
-			if err = m.SSHInterface.CmdAsync(host, "nerdctl restart atoll-registry"); err != nil {
-				return err
-			}
-		case RegistryTypeRegistry:
-			if err = m.SSHInterface.CmdAsync(host, "systemctl restart registry"); err != nil {
-				return err
-			}
-		}
-	}
 	return nil
+}
+
+// RestartRegistry restarts the registry service on host so that it reloads its htpasswd.
+func (m *upgrade) RestartRegistry(host string) error {
+	return m.SSHInterface.CmdAsync(host, fmt.Sprintf("systemctl restart %s", constants.RegistryServiceName))
 }
 
 func (m *maker) configLocalHtpasswd(cfgBasedir string, rc *v1beta1.RegistryConfig) (string, error) {
@@ -133,7 +115,7 @@ func (m *maker) configLocalHtpasswd(cfgBasedir string, rc *v1beta1.RegistryConfi
 		logger.Warn("registry username or password is empty")
 		return "", nil
 	}
-	fp := path.Join(cfgBasedir, "registry_htpasswd")
+	fp := path.Join(cfgBasedir, constants.RegistryHtpasswdFileName)
 	if !m.paths.Has(fp) {
 		pwd := passwd.Htpasswd(rc.Username, rc.Password)
 		if err := file.WriteFile(fp, []byte(pwd)); err != nil {

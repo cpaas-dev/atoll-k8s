@@ -60,16 +60,16 @@ func TestMerge(t *testing.T) {
 			},
 			wantData: `FROM scratch
 MAINTAINER cpaas-dev
-LABEL aa="cc"
-LABEL bb="cc"
-ENV aa=dd
-ENV cc=dd
-ENV ee=ff
-ENV ff=gg
+LABEL aa="cc" \
+	bb="cc"
+ENV aa=dd \
+	cc=dd \
+	ee=ff \
+	ff=gg
 ENTRYPOINT ["ffff","eeee","aaaa"]
 CMD ["ffff","eeee"]
-COPY --from=aaaa  . .
-COPY --from=ccccc  . .`,
+COPY --from=aaaa --exclude=registry . .
+COPY --from=ccccc --exclude=registry . .`,
 			wantErr: false,
 		},
 		{
@@ -101,10 +101,11 @@ COPY --from=ccccc  . .`,
 			},
 			wantData: `FROM scratch
 MAINTAINER cpaas-dev
-LABEL atoll.io.type="rootfs"
-COPY --from=aaaa  . .
-COPY --from=bbbb  . .
-COPY --from=cccc  . .`,
+LABEL apps.atoll.io/type="rootfs" \
+	atoll.io.type="rootfs"
+COPY --from=aaaa --exclude=registry . .
+COPY --from=bbbb --exclude=registry . .
+COPY --from=cccc --exclude=registry . .`,
 			wantErr: false,
 		},
 	}
@@ -161,7 +162,7 @@ func Test_replaceDao(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := escapeDollarSign(tt.args.s, true); got != tt.want {
+			if got := escapeDollarSign(tt.args.s, false); got != tt.want {
 				t.Errorf("escapeDollarSign() = %v, want %v", got, tt.want)
 			}
 		})

@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"path"
-	"strings"
 
 	"github.com/modood/table"
 	"github.com/spf13/pflag"
@@ -40,7 +39,6 @@ type RegistryPasswdResults struct {
 	ClusterName          string
 	HtpasswdPath         string
 	ImageCRIShimFilePath string
-	RegistryType         string
 	RegistryUsername     string
 	RegistryPasswd       string
 	execer               exec.Interface
@@ -50,7 +48,7 @@ type RegistryPasswdResults struct {
 func (r *RegistryPasswdResults) RegisterFlags(fs *pflag.FlagSet) {
 	fs.SetInterspersed(false)
 	fs.StringVarP(&r.ClusterName, "cluster-name", "c", "default", "cluster name")
-	fs.StringVarP(&r.HtpasswdPath, "htpasswd-path", "p", "/etc/registry/registry_htpasswd", "registry passwd file path")
+	fs.StringVarP(&r.HtpasswdPath, "htpasswd-path", "p", path.Join(constants.RegistryConfigDir, constants.RegistryHtpasswdFileName), "registry passwd file path")
 	fs.StringVarP(&r.ImageCRIShimFilePath, "cri-shim-file-path", "f", "/etc/image-cri-shim.yaml", "image cri shim file path,if empty will not update image cri shim file")
 }
 
@@ -78,10 +76,6 @@ func (r *RegistryPasswdResults) Validate() (*v1beta1.Cluster, error) {
 		return nil, fmt.Errorf("cluster %s process error: %+v", r.ClusterName, err)
 	}
 	cluster := clusterFile.GetCluster()
-	r.RegistryType = confirm.SelectInput("Please select registry type", []string{string(RegistryTypeRegistry), string(RegistryTypeContainerd), string(RegistryTypeDocker)})
-	if r.RegistryType == "" {
-		return nil, errors.New("invalid registry type")
-	}
 	r.RegistryUsername = confirm.Input("Please input registry username", "admin", func(input string) error {
 		if len(input) < 3 {
 			return errors.New("username must have more than 3 characters")
@@ -107,11 +101,6 @@ func (r *RegistryPasswdResults) Validate() (*v1beta1.Cluster, error) {
 			Name:     "ImageCRIShimFilePath",
 			Value:    r.ImageCRIShimFilePath,
 			Describe: "image cri shim file path",
-		},
-		{
-			Name:     "RegistryType",
-			Value:    r.RegistryType,
-			Describe: "registry type",
 		},
 		{
 			Name:     "RegistryUsername",
@@ -152,52 +141,38 @@ func (r *RegistryPasswdResults) Apply(cluster *v1beta1.Cluster) error {
 	registry.Username = r.RegistryUsername
 	registry.Password = r.RegistryPasswd
 	shim.Auth = fmt.Sprintf("%s:%s", r.RegistryUsername, r.RegistryPasswd)
-	passwordErrorIP := make([]string, 0)
+	var errs []error
 	for _, v := range cluster.GetRegistryIPAndPortList() {
-		if err := r.upgrade.UpdateRegistryPasswd(registry, r.HtpasswdPath, v, RegistryType(r.RegistryType)); err != nil {
-			logger.Debug("update registry passwd error: %s", err.Error())
-			passwordErrorIP = append(passwordErrorIP, v)
+		if err := r.updateRegistryPasswd(registry, v); err != nil {
+			errs = append(errs, err)
 		}
 	}
-	logger.Info("update registry passwd success")
-	configErrorIP := make([]string, 0)
-	shimConfigErrorIP := make([]string, 0)
 	etcPath := path.Join(root, constants.EtcDirName, helpers.RegistryCustomConfig)
 	for _, v := range cluster.GetAllIPS() {
 		if err := r.upgrade.UpdateRegistryConfig(registry, etcPath, v); err != nil {
-			logger.Debug("update registry config error: %s", err.Error())
-			configErrorIP = append(configErrorIP, v)
+			errs = append(errs, fmt.Errorf("update registry config %s on %s: %w", etcPath, v, err))
 		}
 		if r.ImageCRIShimFilePath == "" {
 			continue
 		}
 		if err := r.upgrade.UpdateImageShimConfig(shim, r.ImageCRIShimFilePath, v); err != nil {
-			logger.Debug("update image cri shim config error: %s", err.Error())
-			shimConfigErrorIP = append(shimConfigErrorIP, v)
+			errs = append(errs, fmt.Errorf("update image cri shim config %s on %s: %w", r.ImageCRIShimFilePath, v, err))
 		}
 	}
-	if len(passwordErrorIP) > 0 || len(configErrorIP) > 0 || len(shimConfigErrorIP) > 0 {
-		logger.Error("update registry passwd or config error,please check")
-		prints := []confirmPrint{
-			{
-				Name:     "RegistryPasswdIP",
-				Value:    strings.Join(passwordErrorIP, ","),
-				Describe: "registry password error ip",
-			},
-			{
-				Name:     "ConfigIP",
-				Value:    strings.Join(configErrorIP, ","),
-				Describe: "config error ip",
-			},
-			{
-				Name:     "ShimConfigIP",
-				Value:    strings.Join(shimConfigErrorIP, ","),
-				Describe: "image cri shim config error ip",
-			},
-		}
-		table.OutputA(prints)
-		return nil
+	if len(errs) > 0 {
+		return fmt.Errorf("update registry passwd or config failed on some hosts, fix them and rerun: %w", errors.Join(errs...))
 	}
 	logger.Info("update cri shim config and registry config success")
+	return nil
+}
+
+// updateRegistryPasswd installs the new htpasswd on a registry host and restarts the registry service.
+func (r *RegistryPasswdResults) updateRegistryPasswd(registry *v1beta1.RegistryConfig, host string) error {
+	if err := r.upgrade.UpdateRegistryPasswd(registry, r.HtpasswdPath, host); err != nil {
+		return fmt.Errorf("update registry htpasswd %s on %s: %w", r.HtpasswdPath, host, err)
+	}
+	if err := r.upgrade.RestartRegistry(host); err != nil {
+		return fmt.Errorf("restart registry service %s on %s: %w", constants.RegistryServiceName, host, err)
+	}
 	return nil
 }

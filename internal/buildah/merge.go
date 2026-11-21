@@ -17,11 +17,14 @@ limitations under the License.
 package buildah
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
+	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 	"github.com/cpaas-dev/atoll-k8s/internal/image"
 
 	"go.podman.io/buildah/pkg/parse"
@@ -127,7 +130,11 @@ func newMergeCommand() *cobra.Command {
 	return mergeCommand
 }
 
-func mergeImagesWithScratchContainer(newImageName string, images []string, setters []FlagSetter) (*buildah.BuilderInfo, error) {
+// mergeImagesWithScratchContainer prepares the build context of the merge in the mount point of
+// a scratch container: the registry roots of all images merged into registry/ and a Sealfile
+// copying the file systems of the images without their registry directories, then the merged
+// registry root. The scratch container is deleted when preparing fails.
+func mergeImagesWithScratchContainer(newImageName string, images []string, setters []FlagSetter) (_ *buildah.BuilderInfo, err error) {
 	b, err := New("")
 	if err != nil {
 		return nil, err
@@ -137,6 +144,13 @@ func mergeImagesWithScratchContainer(newImageName string, images []string, sette
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if err != nil {
+			if deleteErr := b.Delete(cName); deleteErr != nil {
+				err = errors.Join(err, fmt.Errorf("delete scratch container %s: %w", cName, deleteErr))
+			}
+		}
+	}()
 	logger.Debug("mergeDir: %s", bInfo.MountPoint)
 	if err = b.Pull(images, append(setters, WithPullPolicyOption(PullIfMissing.String()))...); err != nil {
 		return nil, err
@@ -146,18 +160,29 @@ func mergeImagesWithScratchContainer(newImageName string, images []string, sette
 	for _, i := range images {
 		obj, err := b.InspectImage(i)
 		if err != nil {
-			logger.Error("InspectImage error: %+v", err)
+			return nil, fmt.Errorf("inspect image %s: %w", i, err)
 		}
-		if obj != nil {
-			imageObjList = append(imageObjList, map[string]v1.Image{i: *obj.OCIv1})
-		}
+		imageObjList = append(imageObjList, map[string]v1.Image{i: *obj.OCIv1})
 	}
 
+	mergeDir := bInfo.MountPoint
+	registryDir := filepath.Join(mergeDir, constants.RegistryDirName)
+	for idx, i := range images {
+		if err = mergeImageRegistry(b, fmt.Sprintf("%s-%d", cName, idx), i, registryDir, setters); err != nil {
+			return nil, err
+		}
+	}
 	dockerfile, err := image.MergeDockerfileFromImages(imageObjList)
 	if err != nil {
 		return nil, err
 	}
-	mergeDir := bInfo.MountPoint
+	hasRegistry, err := pathExists(registryDir)
+	if err != nil {
+		return nil, err
+	}
+	if hasRegistry {
+		dockerfile += "\n" + image.CopyRegistryInstruction
+	}
 	err = os.WriteFile(path.Join(mergeDir, "Sealfile"), []byte(dockerfile), 0755)
 	if err != nil {
 		return nil, err
@@ -166,4 +191,22 @@ func mergeImagesWithScratchContainer(newImageName string, images []string, sette
 	logger.Debug("buildOptions tag: %s", newImageName)
 	logger.Debug("buildOptions contextDir: %s", mergeDir)
 	return &bInfo, nil
+}
+
+// mergeImageRegistry merges the registry root of the pulled image imageName into dst through
+// the working container containerName, which is deleted afterwards.
+func mergeImageRegistry(b Interface, containerName, imageName, dst string, setters []FlagSetter) (err error) {
+	info, err := b.Create(containerName, imageName, setters...)
+	if err != nil {
+		return fmt.Errorf("create working container %s of image %s: %w", containerName, imageName, err)
+	}
+	defer func() {
+		if deleteErr := b.Delete(containerName); deleteErr != nil {
+			err = errors.Join(err, fmt.Errorf("delete working container %s of image %s: %w", containerName, imageName, deleteErr))
+		}
+	}()
+	if err := mergeRootfsRegistry(dst, info.MountPoint); err != nil {
+		return fmt.Errorf("merge the registry directory of image %s: %w", imageName, err)
+	}
+	return nil
 }

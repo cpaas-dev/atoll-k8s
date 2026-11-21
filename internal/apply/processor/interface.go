@@ -136,6 +136,9 @@ func ConfirmDeleteNodes() error {
 	return nil
 }
 
+// MirrorRegistry pushes the images in the registry dirs of mounts to the running registry
+// of every registry host. The machine running atoll must reach each registry host's
+// registry port.
 func MirrorRegistry(cluster *v2.Cluster, mounts []v2.MountImage) error {
 	registries := cluster.GetRegistryIPAndPortList()
 	logger.Debug("registry nodes is: %+v", registries)

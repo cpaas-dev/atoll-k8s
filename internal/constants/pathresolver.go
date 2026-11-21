@@ -98,7 +98,6 @@ type PathResolver interface {
 	RootFSEtcPath() string
 	RootFSStaticsPath() string
 	RootFSScriptsPath() string
-	RootFSRegistryPath() string
 	RootFSManifestsPath() string
 	RootFSBinPath() string
 	RootFSAtollctlPath() string
@@ -127,10 +126,6 @@ func (d *defaultPathResolver) RootFSScriptsPath() string {
 
 func (d *defaultPathResolver) RootFSEtcPath() string {
 	return filepath.Join(d.RootFSPath(), EtcDirName)
-}
-
-func (d *defaultPathResolver) RootFSRegistryPath() string {
-	return filepath.Join(d.RootFSPath(), RegistryDirName)
 }
 
 func (d *defaultPathResolver) RootFSCharsPath() string {
