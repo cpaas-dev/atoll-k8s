@@ -40,10 +40,6 @@ All the binaries except `atoll` can be built anywhere since they have `CGO_ENABL
 
 > Both Makefile and GoReleaser in this project have this setting.
 
-## Notes about go workspace
-
-As atoll is using go1.18's [workspace feature](https://go.dev/doc/tutorial/workspaces), once you add a new module, you need to run `go work use -r .` at root directory to update the workspace synced.
-
 ## Using atoll image ci
 
 ### How to build container image

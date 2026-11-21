@@ -15,7 +15,7 @@ description: 编译、测试、lint、格式化 Atoll-K8s Go 代码库（atoll�
 
 - `cmd/<binary>`：atoll、atollctl、lvscare、image-cri-shim 的入口
 - `internal/`：所有共享逻辑
-- `test/e2e`：端到端测试，是独立的 Go module，通过 `go.work` 接入
+- `test/e2e`：端到端测试，是独立的 Go module，通过 `replace` 依赖根 module
 - `docs/`：文档
 
 ## 编译
