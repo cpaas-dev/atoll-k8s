@@ -131,7 +131,6 @@ func buildKubeClient() (kubernetes.Interface, error) {
 	}
 	kubeconfigCandidates = append(kubeconfigCandidates,
 		"/etc/kubernetes/admin.conf",
-		"/etc/rancher/k3s/k3s.yaml",
 	)
 	// Try to get home directory from environment
 	// Default to /root for systemd environments where HOME may not be set

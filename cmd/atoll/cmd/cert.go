@@ -73,7 +73,6 @@ func newCertCmd() *cobra.Command {
 			for _, f := range []string{
 				path.Join(pathResolver.ConfigsPath(), "kubeadm-init.yaml"),
 				path.Join(pathResolver.EtcPath(), "kubeadm-init.yaml"),
-				path.Join(pathResolver.ConfigsPath(), "k3s-init.yaml"),
 			} {
 				if fileutils.IsExist(f) {
 					runtimeConfigPath = f

@@ -25,7 +25,6 @@ import (
 	"github.com/cpaas-dev/atoll-k8s/internal/clusterfile"
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 	"github.com/cpaas-dev/atoll-k8s/internal/exec"
-	"github.com/cpaas-dev/atoll-k8s/internal/runtime/k3s"
 	"github.com/cpaas-dev/atoll-k8s/internal/ssh"
 	"github.com/cpaas-dev/atoll-k8s/internal/system"
 	v2 "github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
@@ -181,10 +180,9 @@ func (c *Applier) applyDesired() (result error) {
 
 func (c *Applier) getWriteBackObjects() []any {
 	obj := []any{c.ClusterDesired}
-	distribution := c.ClusterFile.GetCluster().GetDistribution()
 	if runtimeConfig := c.ClusterFile.GetRuntimeConfig(); runtimeConfig != nil {
 		if components := runtimeConfig.GetComponents(); len(components) > 0 {
-			if distribution == k3s.Distribution || c.ClusterDesired.IsStandaloneControlPlane() {
+			if c.ClusterDesired.IsStandaloneControlPlane() {
 				obj = append(obj, components...)
 			}
 		}

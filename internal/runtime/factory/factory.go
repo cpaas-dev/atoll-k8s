@@ -19,7 +19,6 @@ import (
 	"fmt"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/runtime"
-	"github.com/cpaas-dev/atoll-k8s/internal/runtime/k3s"
 	"github.com/cpaas-dev/atoll-k8s/internal/runtime/kubernetes"
 	"github.com/cpaas-dev/atoll-k8s/internal/runtime/kubernetes/types"
 	"github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
@@ -33,8 +32,6 @@ func New(cluster *v1beta1.Cluster, cfg runtime.Config) (runtime.Interface, error
 	switch distribution {
 	case kubernetes.Distribution, "kubeadm", "":
 		return kubernetes.New(cluster, cfg)
-	case k3s.Distribution:
-		return k3s.New(cluster, cfg)
 	}
 	return nil, fmt.Errorf("unsupported distribution %s", distribution)
 }
@@ -43,8 +40,6 @@ func NewRuntimeConfig(distribution string) (runtime.Config, error) {
 	switch distribution {
 	case kubernetes.Distribution, "kubeadm", "":
 		return types.NewKubeadmConfig(), nil
-	case k3s.Distribution:
-		return &k3s.Config{}, nil
 	}
 	return nil, fmt.Errorf("unsupported distribution %s", distribution)
 }

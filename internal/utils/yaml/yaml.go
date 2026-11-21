@@ -107,14 +107,6 @@ func Unmarshal(r io.Reader, obj interface{}) error {
 	return unmarshalStrict(r, obj)
 }
 
-func IsNil(b []byte) (bool, error) {
-	m, err := UnmarshalToMap(b)
-	if err != nil {
-		return false, err
-	}
-	return len(m) == 0, nil
-}
-
 // UnmarshalFile if there is no content in the file or it contains only spaces,
 // result will be nil, then the given object is not initialized at this time.
 func UnmarshalFile(file string, obj interface{}) error {

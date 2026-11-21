@@ -78,10 +78,7 @@ func NewApplier(infra *terraform.InfraDetail) (*Applier, error) {
 		TestDir:        settings.DefaultTestDir,
 	}
 	if len(a.RunImages) == 0 {
-		a.RunImages = []string{settings.HelmImageName}
-		if !strings.Contains(a.ImageName, "k3s") {
-			a.RunImages = append(a.RunImages, settings.CalicoImageName)
-		}
+		a.RunImages = []string{settings.HelmImageName, settings.CalicoImageName}
 	}
 	if err := a.WaitSSHReady(); err != nil {
 		return nil, fmt.Errorf("wait for ssh ready: %v", err)

@@ -21,7 +21,6 @@ import (
 
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 	"github.com/cpaas-dev/atoll-k8s/internal/runtime/decode"
-	"github.com/cpaas-dev/atoll-k8s/internal/runtime/k3s"
 	"github.com/cpaas-dev/atoll-k8s/internal/runtime/kubernetes/types"
 	"github.com/cpaas-dev/atoll-k8s/internal/template"
 	v2 "github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
@@ -151,19 +150,13 @@ func (c *ClusterFile) DecodeConfigs(data []byte) error {
 }
 
 func (c *ClusterFile) DecodeRuntimeConfig(data []byte) error {
-	// TODO: handling more types of runtime configuration
-	cfg, _ := k3s.ParseConfig(data)
-	if cfg != nil {
-		c.runtimeConfig = cfg
-	} else {
-		kubeadmConfig, err := types.LoadKubeadmConfigs(string(data), false, decode.CRDFromString)
-		if err != nil {
-			return err
-		}
-		if kubeadmConfig == nil {
-			return ErrTypeNotFound
-		}
-		c.runtimeConfig = kubeadmConfig
+	kubeadmConfig, err := types.LoadKubeadmConfigs(string(data), false, decode.CRDFromString)
+	if err != nil {
+		return err
 	}
+	if kubeadmConfig == nil {
+		return ErrTypeNotFound
+	}
+	c.runtimeConfig = kubeadmConfig
 	return nil
 }
