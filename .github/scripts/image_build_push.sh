@@ -1,25 +1,30 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 set -e
-name=${1:-"kubernetes"}
-version=${2:-"v1.28.15"}
+
+NAME=${1:-"kubernetes"}
+VERSION=${2:-"v1.28.15"}
 TOKEN=${3:-"changeme"}
 ARCH=${4:-"amd64"}
 AUTHOR=${5:-"cpaas-dev"}
 COMMIT_ID=${6:-"latest"}
-IMAGE_NAME="ghcr.io/${AUTHOR}/atoll/${name}:${version}"
+IMAGE_NAME="ghcr.io/${AUTHOR}/atoll/${NAME}:${VERSION}"
+COMMIT_DATE=$(date +%Y%m%d%H%M%S)
 
-commitDATE=$(date +%Y%m%d%H%M%S)
 atoll login -u "${AUTHOR}" -p "${TOKEN}" ghcr.io
-atoll build --pull=always --platform=linux/"${ARCH}" -t "$IMAGE_NAME"-"${ARCH}" \
-  --label org.opencontainers.image.description="kubernetes and app cluster image" \
-  --label org.opencontainers.image.licenses="Atoll Sustainable Use License" \
-  --label org.opencontainers.image.source="https://github.com/${AUTHOR}/atoll" \
-  --label org.opencontainers.image.title="atoll-image" \
-  --label org.opencontainers.image.time="${commitDATE}" \
-  --label org.opencontainers.image.url="https://github.com/${AUTHOR}/atoll" \
-  --label org.opencontainers.image.version="${version}" \
-  --label org.opencontainers.image.revision="${COMMIT_ID}" .
+atoll build \
+    --pull=always \
+    --platform="linux/${ARCH}" \
+    -t "${IMAGE_NAME}-${ARCH}" \
+    --label org.opencontainers.image.description="kubernetes and app cluster image" \
+    --label org.opencontainers.image.licenses="Atoll Sustainable Use License" \
+    --label org.opencontainers.image.source="https://github.com/${AUTHOR}/atoll-k8s" \
+    --label org.opencontainers.image.title="atoll-image" \
+    --label org.opencontainers.image.time="${COMMIT_DATE}" \
+    --label org.opencontainers.image.url="https://github.com/${AUTHOR}/atoll-k8s" \
+    --label org.opencontainers.image.version="${VERSION}" \
+    --label org.opencontainers.image.revision="${COMMIT_ID}" \
+    .
 
-atoll push "$IMAGE_NAME"-"${ARCH}"
-atoll rmi  -p --force || true
-
+atoll push "${IMAGE_NAME}-${ARCH}"
+atoll rmi -p --force || true

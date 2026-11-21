@@ -13,19 +13,23 @@
 # limitations under the License.
 
 FROM --platform=$BUILDPLATFORM golang:1.27.3-bookworm as builder
+
 ARG GITHUB_TOKEN=$GITHUB_TOKEN
 ARG TARGETARCH
 ARG ACTION=build-pack
 
 WORKDIR /work
 COPY . /work
+
 # in china using this
 # RUN mv /work/.github/sources.list /etc/apt
-RUN dpkg --add-architecture arm64 &&  \
-      apt update &&  \
-      apt install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu && \
-      apt install -y libbtrfs-dev btrfs-tools && \
-      apt install -y libgpgme-dev libdevmapper-dev && \
-      apt install -y libbtrfs-dev:arm64 btrfs-tools:arm64 && \
-      apt install -y libgpgme-dev:arm64 libdevmapper-dev:arm64 && \
-      make ${ACTION}
+
+RUN true\
+    && dpkg --add-architecture arm64 \
+    && apt update \
+    && apt install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+    && apt install -y libbtrfs-dev btrfs-tools \
+    && apt install -y libgpgme-dev libdevmapper-dev \
+    && apt install -y libbtrfs-dev:arm64 btrfs-tools:arm64 \
+    && apt install -y libgpgme-dev:arm64 libdevmapper-dev:arm64 \
+    && make ${ACTION}

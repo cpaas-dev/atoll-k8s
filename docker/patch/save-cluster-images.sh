@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 IMAGE=localhost:5000/${OWNER}/lvscare:$GIT_COMMIT_SHORT_SHA-$ARCH
 PATCH=ghcr.io/${OWNER}/atoll-patch:$GIT_COMMIT_SHORT_SHA-$ARCH
@@ -7,19 +7,19 @@ ATOLL=sudo atoll
 ATOLL_VERSION=4.1.7
 
 if [ -z "${ARCH}" ]; then
-  ARCH=$(uname -m)
+    ARCH=$(uname -m)
 fi
 
 case "${ARCH}" in
-  amd64|x86_64)
+amd64 | x86_64)
     ARCH=amd64
     ATOLL_ARCH=amd64
     ;;
-  arm64|aarch64)
+arm64 | aarch64)
     ARCH=arm64
     ATOLL_ARCH=arm64
     ;;
-  *)
+*)
     echo "Unsupported ARCH: ${ARCH}" >&2
     exit 1
     ;;
@@ -38,7 +38,7 @@ sudo apt autoremove
 # shellcheck disable=SC2164
 cd ${PATCH_DIR}
 mkdir -p images/shim
-echo "${IMAGE}" > images/shim/lvscareImage
+echo "${IMAGE}" >images/shim/lvscareImage
 sed -i "s#__lvscare__#${IMAGE}#g" Dockerfile
 
 sudo atoll build -t "${PATCH}" --label=atoll.io.type=patch --label=image="${IMAGE}" --platform linux/"${ARCH}" -f Dockerfile .

@@ -29,19 +29,19 @@ import (
 
 var exampleGen = `
 generate a single-node cluster using the default settings:
-    atoll gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1
+    atoll gen ghcr.io/cpaas-dev/atoll/kubernetes:v1.25.0 ghcr.io/cpaas-dev/atoll/helm:v3.8.2 ghcr.io/cpaas-dev/atoll/calico:v3.24.1
 
 generate a cluster with multi images, specify masters and nodes:
-    atoll gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
+    atoll gen ghcr.io/cpaas-dev/atoll/kubernetes:v1.25.0 ghcr.io/cpaas-dev/atoll/helm:v3.8.2 ghcr.io/cpaas-dev/atoll/calico:v3.24.1 \
         --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
         --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
 
 specify server InfraSSH port:
   all servers use the same InfraSSH port：
-    atoll gen labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
+    atoll gen ghcr.io/cpaas-dev/atoll/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
         --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --port 24 --passwd 'xxx'
   different InfraSSH port numbers：
-    atoll gen labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
+    atoll gen ghcr.io/cpaas-dev/atoll/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
         --nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd 'xxx'
 `
 

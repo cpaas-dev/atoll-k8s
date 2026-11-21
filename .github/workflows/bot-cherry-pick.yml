@@ -65,7 +65,6 @@ jobs:
             bot
           delete-branch: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          reviewers: cuisongliu
           milestone: cherry-pick
           committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
           author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>

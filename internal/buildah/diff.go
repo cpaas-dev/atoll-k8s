@@ -137,9 +137,9 @@ func newDiffCommand() *cobra.Command {
 			}
 			return runDiff(cmd, args, opts)
 		},
-		Example: fmt.Sprintf(`%[1]s diff labring/kubernetes:v1.25 labring/kubernetes:v1.26
+		Example: fmt.Sprintf(`%[1]s diff ghcr.io/cpaas-dev/atoll/kubernetes:v1.25 ghcr.io/cpaas-dev/atoll/kubernetes:v1.26
   %[1]s diff -o table oci-archive:/path/of/older.tar oci-archive:/path/of/newer.tar
-  %[1]s diff --patch --save --o patch.tar -t labring/kubernetes:patch-from-125-126 labring/kubernetes:v1.25 labring/kubernetes:v1.26`,
+  %[1]s diff --patch --save --o patch.tar -t ghcr.io/cpaas-dev/atoll/kubernetes:patch-from-125-126 ghcr.io/cpaas-dev/atoll/kubernetes:v1.25 ghcr.io/cpaas-dev/atoll/kubernetes:v1.26`,
 			rootCmd.CommandPath()),
 	}
 	opts.RegisterFlags(cmd.Flags())

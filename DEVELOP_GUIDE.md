@@ -113,7 +113,7 @@ As atoll is using go1.18's [workspace feature](https://go.dev/doc/tutorial/works
 1. launch vm and mount atoll source code:
 ```shell
 # edit the ATOLL_CODE_DIR to your own
-export ATOLL_CODE_DIR=/Users/fanux/work/src/github.com/cpaas-dev/atoll-k8s
+export ATOLL_CODE_DIR=$HOME/work/src/github.com/cpaas-dev/atoll-k8s
 # copy, paste and run to launch vm
 multipass launch \
    --mount ${ATOLL_CODE_DIR}:/go/src/github.com/cpaas-dev/atoll-k8s \

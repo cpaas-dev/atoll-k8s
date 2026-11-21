@@ -100,8 +100,8 @@ const defaultPolicy = `
 const defaultRegistries = `unqualified-search-registries = ["docker.io"]
 
 [[registry]]
-prefix = "docker.io/labring"
-location = "docker.io/labring"
+prefix = "ghcr.io/cpaas-dev/atoll"
+location = "ghcr.io/cpaas-dev/atoll"
 `
 
 const (

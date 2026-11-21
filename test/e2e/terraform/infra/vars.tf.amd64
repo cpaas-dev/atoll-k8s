@@ -23,7 +23,8 @@ variable "ecs_type" {
 }
 
 variable "ecs_password" {
-  default = "Fanux#123"
+  type      = string
+  sensitive = true
 }
 
 variable "disk_category" {

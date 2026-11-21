@@ -64,7 +64,7 @@ jobs:
         shell: bash
         env:
           ATOLL_TEST_ARCH: ${{ matrix.arch }}
-          ATOLL_E2E_TEST_IMAGE_NAME: registry.cn-shanghai.aliyuncs.com/labring/k3s:v1.28.4
+          ATOLL_E2E_TEST_IMAGE_NAME: ghcr.io/cpaas-dev/atoll/k3s:v1.28.4
           ATOLL_E2E_TEST_PATCH_IMAGE_TAR: /tmp/atoll/images/patch-${{ matrix.arch }}.tar.gz
           ATOLL_E2E_TEST_PATCH_IMAGE_NAME: ghcr.io/cpaas-dev/atoll-k8s-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}
           ATOLL_E2E_TEST_ATOLL_BIN_PATH: /tmp/atoll/bin/atoll
@@ -72,6 +72,7 @@ jobs:
           ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.E2E_ALIYUN_ACCESS_KEY_SECRET }}
           ALIYUN_RESOURCE_GROUP_ID: ${{ secrets.E2E_ALIYUN_RESOURCE_GROUP_ID }}
           ALIYUN_REGION_ID: ${{ secrets.E2E_ALIYUN_REGION_ID }}
+          TF_VAR_ecs_password: ${{ secrets.E2E_ECS_PASSWORD }}
         run: |
           set -ex
           sudo su

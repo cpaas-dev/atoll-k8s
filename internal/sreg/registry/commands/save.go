@@ -45,7 +45,7 @@ func NewRegistryImageSaveCmd(examplePrefix string) *cobra.Command {
 		Short: "save images to local registry dir",
 		Example: fmt.Sprintf(`
 %[1]s save --registry-dir=/tmp/registry .
-%[1]s save --registry-dir=/tmp/registry --images=containers-storage:docker.io/labring/coredns:v0.0.1
+%[1]s save --registry-dir=/tmp/registry --images=containers-storage:ghcr.io/cpaas-dev/atoll/coredns:v0.0.1
 %[1]s save --registry-dir=/tmp/registry --images=docker-daemon:docker.io/library/nginx:latest
 %[1]s save --registry-dir=/tmp/registry --tars=docker-archive:/root/config_main.tar@library/config_main
 %[1]s save --registry-dir=/tmp/registry --tars=oci-archive:/root/config_main.tar@library/config_main

@@ -70,7 +70,7 @@ make build BINS=atoll     # 构建单个二进制
 make build                # 构建全部二进制，产物位于 bin/linux_<arch>/
 ```
 
-更多细节见 [开发指南](./DEVELOPGUIDE.md)。
+更多细节见 [开发指南](./DEVELOP_GUIDE.md)。
 
 ## 目录结构
 

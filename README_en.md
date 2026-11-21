@@ -70,7 +70,7 @@ make build BINS=atoll     # build a single binary
 make build                # build all binaries into bin/linux_<arch>/
 ```
 
-See the [development guide](./DEVELOPGUIDE.md) for details.
+See the [development guide](./DEVELOP_GUIDE.md) for details.
 
 ## Repository layout
 

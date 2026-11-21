@@ -1,11 +1,11 @@
 FROM ubuntu:22.04
+
 ARG TARGETARCH
 
 WORKDIR /usr/bin/
-
 RUN  apt update -y \
-  && apt install -y uidmap fuse-overlayfs \
-  && rm -rf /var/lib/apt/lists/*
+    && apt install -y uidmap fuse-overlayfs \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --chmod=0755 /bin/atoll-$TARGETARCH/atoll .
 ENTRYPOINT ["/usr/bin/atoll"]

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright © 2022 sealos.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 #1、将IP写在一个文件里，比如文件名为hosts_file，一行一个IP地址。
 #2、修改ssh-mutual-trust.sh里面的用户名及密码，默认为root用户及密码123。
 #3、./ssh-mutual-trust.sh hosts_file
@@ -25,8 +24,8 @@
 
 # check args count
 if test $# -lt 1; then
-  echo -e "\nUsage: $0 < hosts file list > < username > < password >\n"
-  exit 1
+    echo -e "\nUsage: $0 < hosts file list > < username > < password >\n"
+    exit 1
 fi
 
 #hosts_file=${@:1:$#-2}
@@ -38,18 +37,18 @@ username=$2
 password=$3
 
 if test X$2 == X""; then
-  username=root
-  password=123
+    username=root
+    password=123
 fi
 
 if test X$3 == X""; then
-  password=123
+    password=123
 fi
 
-# check sshkey file 
+# check sshkey file
 sshkey_file=~/.ssh/id_rsa.pub
 if ! test -e $sshkey_file; then
-  expect -c "
+    expect -c "
   spawn ssh-keygen -t rsa
   expect \"Enter*\" { send \"\n\"; exp_continue; }
   "
@@ -62,13 +61,12 @@ echo "hosts: "
 echo "$hosts"
 echo "======================================================================="
 
-ssh_key_copy()
-{
-  # delete history
-  sed "/$1/d" -i ~/.ssh/known_hosts
+ssh_key_copy() {
+    # delete history
+    sed "/$1/d" -i ~/.ssh/known_hosts
 
-  # start copy 
-  expect -c "
+    # start copy
+    expect -c "
   set timeout 100
   spawn ssh-copy-id $username@$1
   expect {
@@ -82,25 +80,24 @@ ssh_key_copy()
 
 # auto sshkey pair
 for host in $hosts; do
-  echo "======================================================================="
+    echo "======================================================================="
 
-  # check network
-  ping -i 0.2 -c 3 -W 1 $host >& /dev/null
-  if test $? -ne 0; then
-    echo "[ERROR]: Can't connect $host"
-    exit 1
-  fi
+    # check network
+    ping -i 0.2 -c 3 -W 1 $host >&/dev/null
+    if test $? -ne 0; then
+        echo "[ERROR]: Can't connect $host"
+        exit 1
+    fi
 
-  cat /etc/hosts | grep -v '^#' | grep $host >& /dev/null
-  if test $? -eq 0; then
-    hostaddr=$(cat /etc/hosts | grep -v '^#' | grep $host | awk '{print $1}')
-    hostname=$(cat /etc/hosts | grep -v '^#' | grep $host | awk '{print $2}')
-    ssh_key_copy $hostaddr
-    ssh_key_copy $hostname
-  else
-    ssh_key_copy $host
-  fi
+    cat /etc/hosts | grep -v '^#' | grep $host >&/dev/null
+    if test $? -eq 0; then
+        hostaddr=$(cat /etc/hosts | grep -v '^#' | grep $host | awk '{print $1}')
+        hostname=$(cat /etc/hosts | grep -v '^#' | grep $host | awk '{print $2}')
+        ssh_key_copy $hostaddr
+        ssh_key_copy $hostname
+    else
+        ssh_key_copy $host
+    fi
 
-  echo ""
+    echo ""
 done
-

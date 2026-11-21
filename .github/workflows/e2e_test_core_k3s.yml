@@ -90,9 +90,12 @@ jobs:
           sudo mv /tmp/atoll /usr/bin/
           sudo atoll version
       - name: Remove containerd && docker
-        uses: labring/sealos-action@v0.0.7
-        with:
-          type: prune
+        run: |
+          sudo apt-get remove -y moby-buildx moby-cli moby-compose moby-containerd moby-engine
+          sudo systemctl unmask containerd || true
+          sudo systemctl unmask docker || true
+          sudo mkdir -p /sys/fs/cgroup/systemd
+          sudo mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd || true
       - name: Verify E2e test
         env:
           UNIT: ${{ matrix.unit }}

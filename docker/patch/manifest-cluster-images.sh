@@ -1,6 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 DEFAULT_REPO_NAME="atoll-patch"
 IMAGE_NAME=${1:-"ghcr.io/${OWNER}/${DEFAULT_REPO_NAME}:$GIT_COMMIT_SHORT_SHA"}
+
 sudo atoll push "${IMAGE_NAME}"-amd64
 sudo atoll push "${IMAGE_NAME}"-arm64
 sudo atoll images
