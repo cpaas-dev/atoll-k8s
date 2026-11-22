@@ -21,7 +21,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/bootstrap"
-	"github.com/cpaas-dev/atoll-k8s/internal/buildah"
 	"github.com/cpaas-dev/atoll-k8s/internal/checker"
 	"github.com/cpaas-dev/atoll-k8s/internal/clusterfile"
 	"github.com/cpaas-dev/atoll-k8s/internal/config"
@@ -39,7 +38,7 @@ import (
 type CreateProcessor struct {
 	maintenanceContext context.Context
 	ClusterFile        clusterfile.Interface
-	Buildah            buildah.Interface
+	Images             *ClusterImages
 	Runtime            runtime.Interface
 	Guest              guest.Interface
 	ExtraEnvs          map[string]string // parsing from CLI arguments
@@ -99,7 +98,7 @@ func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 }
 
 func (c *CreateProcessor) preProcess(cluster *v2.Cluster) error {
-	if err := MountClusterImages(c.Buildah, cluster, false); err != nil {
+	if err := MountClusterImages(c.maintenanceContext, c.Images, cluster, false); err != nil {
 		return err
 	}
 	// env in cluster.spec will be merged into every mounts object
@@ -182,7 +181,7 @@ func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {
 }
 
 func NewCreateProcessor(ctx context.Context, name string, clusterFile clusterfile.Interface) (Interface, error) {
-	bder, err := buildah.New(name)
+	images, err := NewClusterImages(ctx, name)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +193,7 @@ func NewCreateProcessor(ctx context.Context, name string, clusterFile clusterfil
 	return &CreateProcessor{
 		maintenanceContext: ctx,
 		ClusterFile:        clusterFile,
-		Buildah:            bder,
+		Images:             images,
 		Guest:              gs,
 		ExtraEnvs:          GetEnvs(ctx),
 	}, nil

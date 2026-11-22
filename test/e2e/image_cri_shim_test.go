@@ -200,21 +200,6 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 			logger.Info("fs usage mount point: %s", fss[i].GetFsId().GetMountpoint())
 		}
 	}
-	ginkgo.Context("install cluster using hack image shim", func() {
-		ginkgo.It("init cluster", func() {
-			//checkout image-cri-shim status running
-			sealFile := `FROM labring/kubernetes:v1.25.0
-COPY image-cri-shim cri`
-			err = utils.WriteFile("Dockerfile", []byte(sealFile))
-			utils.CheckErr(err)
-			err = fakeClient.Image.BuildImage("kubernetes-hack:v1.25.0", ".", operators.BuildOptions{})
-			utils.CheckErr(err)
-			err = fakeClient.Cluster.Run("kubernetes-hack:v1.25.0")
-			utils.CheckErr(err)
-			err = fakeClient.CmdInterface.AsyncExec("crictl", "images")
-			utils.CheckErr(err)
-		})
-	})
 	ginkgo.Context("image-cri-shim basic lifecycle", func() {
 		ginkgo.BeforeEach(ensureShimClient)
 

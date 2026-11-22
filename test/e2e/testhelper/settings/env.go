@@ -25,16 +25,13 @@ const (
 	DefaultWaiteTime = Prefix + "DEFAULT_WAITE_TIME"
 	MaxWaiteTime     = Prefix + "MAX_WAITE_TIME"
 
-	TestImageName      = Prefix + "IMAGE_NAME"
-	TestImageTar       = Prefix + "IMAGE_TAR"
-	TestPatchImageName = Prefix + "PATCH_IMAGE_NAME"
-	TestPatchImageTar  = Prefix + "PATCH_IMAGE_TAR"
-	TestDEBUG          = Prefix + "DEBUG"
-	TestInfra          = Prefix + "EST_INFRA"
-	TestClusterName    = Prefix + "CLUSTER_NAME"
-	TestRunImages      = Prefix + "RUN_IMAGES"
-	TestDir            = Prefix + "TEST_DIR"
-	TestAtollBinPath   = Prefix + "ATOLL_BIN_PATH"
+	TestImageName    = Prefix + "IMAGE_NAME"
+	TestDEBUG        = Prefix + "DEBUG"
+	TestInfra        = Prefix + "EST_INFRA"
+	TestClusterName  = Prefix + "CLUSTER_NAME"
+	TestRunImages    = Prefix + "RUN_IMAGES"
+	TestDir          = Prefix + "TEST_DIR"
+	TestAtollBinPath = Prefix + "ATOLL_BIN_PATH"
 )
 
 func GetEnvWithDefault(key, defaultValue string) string {

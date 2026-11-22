@@ -23,10 +23,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/moby/moby/api/types/registry"
-	"go.podman.io/image/v5/pkg/docker/config"
-	types2 "go.podman.io/image/v5/types"
-
-	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/sreg/utils/http"
 )
@@ -61,34 +57,4 @@ func NewRegistry(domain string, authConfig registry.AuthConfig) (name.Registry, 
 		}
 	}
 	return name.Registry{}, fmt.Errorf("not found registry: %+v", err)
-}
-
-func ToAuthConfig(cfg types2.DockerAuthConfig) registry.AuthConfig {
-	return registry.AuthConfig{
-		Username:      cfg.Username,
-		Password:      cfg.Password,
-		IdentityToken: cfg.IdentityToken,
-	}
-}
-
-func GetAuthInfo(sys *types2.SystemContext) (map[string]registry.AuthConfig, error) {
-	creds, err := config.GetAllCredentials(sys)
-	if err != nil {
-		return nil, err
-	}
-	auths := make(map[string]registry.AuthConfig, 0)
-
-	for domain, cred := range creds {
-		logger.Debug("GetAuthInfo getCredentials domain: %s, username: %s", domain, cred.Username)
-		reg, err := NewRegistry(domain, ToAuthConfig(cred))
-		if err == nil {
-			auths[domain] = registry.AuthConfig{
-				Username:      cred.Username,
-				Password:      cred.Password,
-				ServerAddress: fmt.Sprintf("%s://%s", reg.Scheme(), reg.RegistryStr()),
-				IdentityToken: cred.IdentityToken,
-			}
-		}
-	}
-	return auths, nil
 }

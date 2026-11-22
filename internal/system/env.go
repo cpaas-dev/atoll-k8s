@@ -22,9 +22,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.podman.io/buildah"
-	"go.podman.io/storage/pkg/homedir"
-
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 )
 
@@ -64,28 +61,12 @@ var configOptions = []ConfigOption{
 	{
 		Key:          RuntimeRootConfigKey,
 		Description:  "root directory for persistent runtime actions/configs.",
-		DefaultValue: filepath.Join(homedir.Get(), fmt.Sprintf(".%s", constants.AppName)),
+		DefaultValue: filepath.Join(constants.GetHomeDir(), fmt.Sprintf(".%s", constants.AppName)),
 	},
 	{
 		Key:          DataRootConfigKey,
 		Description:  "cluster root directory for remote.",
 		DefaultValue: filepath.Join("/var/lib", constants.AppName),
-	},
-	{
-		Key:          BuildahFormatConfigKey,
-		Description:  "`format` of the image manifest and metadata.",
-		DefaultValue: buildah.OCI,
-		OSEnv:        BuildahFormatConfigKey,
-	},
-	{
-		Key:         BuildahLogLevelConfigKey,
-		Description: `the log level to be used in buildah modules, either "trace", "debug", "info", "warn", "error", "fatal", or "panic".`,
-		OSEnv:       BuildahLogLevelConfigKey,
-	},
-	{
-		Key:         ContainerStorageConfEnvKey,
-		Description: "path of container storage config file, setting this env will override the default location",
-		OSEnv:       ContainerStorageConfEnvKey,
 	},
 	{
 		Key:          SyncWorkDirEnvKey,
@@ -105,15 +86,12 @@ var configOptions = []ConfigOption{
 }
 
 const (
-	PromptConfigKey            = "PROMPT"
-	RuntimeRootConfigKey       = "RUNTIME_ROOT"
-	DataRootConfigKey          = "DATA_ROOT"
-	BuildahFormatConfigKey     = "BUILDAH_FORMAT"
-	BuildahLogLevelConfigKey   = "BUILDAH_LOG_LEVEL"
-	ContainerStorageConfEnvKey = "CONTAINERS_STORAGE_CONF"
-	SyncWorkDirEnvKey          = "SYNC_WORKDIR"
-	ExecutionTimeoutConfigKey  = "EXECUTION_TIMEOUT"
-	MaxRetryConfigKey          = "MAX_RETRY"
+	PromptConfigKey           = "PROMPT"
+	RuntimeRootConfigKey      = "RUNTIME_ROOT"
+	DataRootConfigKey         = "DATA_ROOT"
+	SyncWorkDirEnvKey         = "SYNC_WORKDIR"
+	ExecutionTimeoutConfigKey = "EXECUTION_TIMEOUT"
+	MaxRetryConfigKey         = "MAX_RETRY"
 )
 
 func (*envSystemConfig) getValueOrDefault(key string) (*ConfigOption, error) {

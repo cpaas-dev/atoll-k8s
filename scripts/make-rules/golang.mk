@@ -16,18 +16,12 @@ GO := go
 GO_LDFLAGS += -X $(VERSION_PACKAGE).gitVersion=${GIT_TAG} \
 	-X $(VERSION_PACKAGE).gitCommit=${GIT_COMMIT} \
 	-X $(VERSION_PACKAGE).buildDate=${BUILD_DATE} \
-	-s -w \
-	-extldflags '-static --static'
+	-s -w
 ifeq ($(DEBUG), 1)
 	GO_BUILD_FLAGS += -gcflags "all=-N -l"
 	GO_LDFLAGS=
 endif
-GO_BUILD_FLAGS += -tags "containers_image_openpgp netgo exclude_graphdriver_devicemapper static osusergo exclude_graphdriver_btrfs" -trimpath -ldflags "$(GO_LDFLAGS)"
-
-USER_CC_OVERRIDE := $(if $(filter-out default undefined,$(origin CC)),$(value CC),)
-define platform_cc_override
-$(if $(filter-out undefined,$(origin CC_$(1))),$(value CC_$(1)),$(USER_CC_OVERRIDE))
-endef
+GO_BUILD_FLAGS += -trimpath -ldflags "$(GO_LDFLAGS)"
 
 ifeq ($(ROOT_PACKAGE),)
 	$(error the variable ROOT_PACKAGE must be set prior to including golang.mk)
@@ -65,46 +59,7 @@ go.build.%:
 	@echo "===========> Building binary $(COMMAND) $(VERSION) for $(PLATFORM)"
 	@mkdir -p $(BIN_DIR)/$(PLATFORM)
 
-	@if [ "$(COMMAND)" == "atoll" ] || [ "$(COMMAND)" == "atollctl" ]; then \
-		CGO_ENABLED=1; \
-		TARGET_CC="$(call platform_cc_override,$(PLATFORM))"; \
-		resolve_cc() { \
-			local candidate cc_bin; \
-			for candidate in "$$@"; do \
-				if [ -z "$$candidate" ]; then \
-					continue; \
-				fi; \
-				cc_bin="$${candidate%% *}"; \
-				if command -v "$$cc_bin" >/dev/null 2>&1; then \
-					printf '%s\n' "$$candidate"; \
-					return 0; \
-				fi; \
-			done; \
-			return 1; \
-		}; \
-		if [ -z "$$TARGET_CC" ]; then \
-			HOST_OS="$$($(GO) env GOOS)"; \
-			HOST_ARCH="$$($(GO) env GOARCH)"; \
-			HOST_CC="$$($(GO) env CC)"; \
-			if [ "$(OS)" == "$$HOST_OS" ] && [ "$(ARCH)" == "$$HOST_ARCH" ]; then \
-				TARGET_CC="$$(resolve_cc "$$HOST_CC" cc gcc clang)"; \
-			else \
-				case "$(ARCH)" in \
-					amd64) GNU_ARCH=x86_64 ;; \
-					arm64) GNU_ARCH=aarch64 ;; \
-					*) GNU_ARCH="$(ARCH)" ;; \
-				esac; \
-				TARGET_CC="$$(resolve_cc "$$GNU_ARCH-$(OS)-gnu-gcc" "$$GNU_ARCH-pc-$(OS)-gnu-gcc")"; \
-			fi; \
-		fi; \
-		if [ -z "$$TARGET_CC" ]; then \
-			echo "No usable C compiler found for $(PLATFORM). Set CC or CC_$(PLATFORM) explicitly."; \
-			exit 1; \
-		fi; \
-		CGO_ENABLED=$$CGO_ENABLED CC="$$TARGET_CC" GOOS=$(OS) GOARCH=$(ARCH) $(GO) build $(GO_BUILD_FLAGS) -o $(BIN_DIR)/$(PLATFORM)/$(COMMAND) $(ROOT_PACKAGE)/cmd/$(COMMAND); \
-	else \
-		CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) $(GO) build $(GO_BUILD_FLAGS) -o $(BIN_DIR)/$(PLATFORM)/$(COMMAND) $(ROOT_PACKAGE)/cmd/$(COMMAND); \
-	fi
+	@CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) $(GO) build $(GO_BUILD_FLAGS) -o $(BIN_DIR)/$(PLATFORM)/$(COMMAND) $(ROOT_PACKAGE)/cmd/$(COMMAND)
 
 .PHONY: go.build
 go.build: go.build.verify $(addprefix go.build., $(addprefix $(PLATFORM)., $(BINS)))

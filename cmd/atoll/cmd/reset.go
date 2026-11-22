@@ -57,7 +57,6 @@ func newResetCmd() *cobra.Command {
 			logger.Info(getContact())
 		},
 	}
-	setRequireBuildahAnnotation(resetCmd)
 	resetArgs.RegisterFlags(resetCmd.Flags())
 	resetCmd.Flags().BoolVar(&processor.ForceDelete, "force", false, "we also can input an --force flag to reset cluster by force")
 	return resetCmd

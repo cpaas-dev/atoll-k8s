@@ -19,19 +19,7 @@ package operators
 import "github.com/cpaas-dev/atoll-k8s/test/e2e/testhelper/cmd"
 
 type FakeImageInterface interface {
-	ListImages(display bool) ([]DisplayImage, error)
 	PullImage(images ...string) error
-	BuildImage(image, context string, opts BuildOptions) error
-	RemoveImage(images ...string) error
-	DockerArchiveImage(name string) error
-	OCIArchiveImage(name string) error
-	SaveImage(name, file string) error
-	SaveMultiImage(file string, name ...string) error
-	TagImage(name, newName string) error
-	LoadImage(file string) error
-	Create(name string, short bool) ([]byte, error)
-	Merge(newImage string, images []string) error
-	FetchImageID(name string) (string, error)
 }
 
 type FakeCRIInterface interface {
@@ -46,14 +34,6 @@ type FakeClusterInterface interface {
 	Apply(file string) error
 	ApplyOpts(opts *cmd.ApplyOptions) error
 	Reset() error
-}
-
-type FakeInspectInterface interface {
-	LocalImage(name string) error
-	RemoteImage(name string) error
-	DockerArchiveImage(name string) error
-	OCIArchiveImage(name string) error
-	ImageID(id string) error
 }
 
 type FakeCertInterface interface {

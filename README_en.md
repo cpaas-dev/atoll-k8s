@@ -31,7 +31,7 @@ This project is a modified version of [labring/sealos](https://github.com/labrin
 - 99-year certificates, with certificate renewal, cluster backup and upgrade.
 - API server high availability through an IPVS local load balancer with a small footprint.
 - Easy node addition and removal.
-- Cluster images built with the Buildah SDK, fully OCI compatible, composable with storage, databases and other components.
+- Cluster images are standard OCI images, built with common tools such as docker buildx and composable with storage, databases and other components.
 
 ## Quick start
 
@@ -42,30 +42,33 @@ curl -sfL https://raw.githubusercontent.com/cpaas-dev/atoll-k8s/main/scripts/ins
   | sh -s <version> cpaas-dev/atoll-k8s
 ```
 
-Create a cluster:
+Pull the cluster images and create a cluster. `run` and the other cluster commands only use local images, so pull them first with `atoll pull`:
 
 ```bash
+atoll pull <registry>/kubernetes:<version> <registry>/helm:<version> <registry>/calico:<version>
 atoll run <registry>/kubernetes:<version> <registry>/helm:<version> <registry>/calico:<version> \
   --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
   --nodes 192.168.64.21,192.168.64.19 \
   -p <ssh-password>
 ```
 
-Cluster images must be built for Atoll-K8s. Upstream Sealos cluster images (such as `labring/kubernetes`) depend on `SEALOS_*` environment variables and `sealctl`, and cannot be used directly.
+Add `--plain-http` to `atoll pull` for a registry served over HTTP, and `--insecure` for one with a self-signed certificate. Credentials, mirrors and short names come from `docker login` and `registries.conf`. Offline, pass OCI image archives directly, for example `atoll run kubernetes.tar ...`.
 
-Build and run a custom cluster image:
+Cluster images must be built for Atoll-K8s: the rootfs lives under `/cpaas` in the image, and atoll exports only that directory. Upstream Sealos cluster images (such as `labring/kubernetes`) depend on `SEALOS_*` environment variables and `sealctl`, and cannot be used directly.
+
+atoll has no build command; build cluster images with `docker buildx`, copying the content with `COPY rootfs/ /cpaas/` in the Dockerfile:
 
 ```bash
-atoll build -t my-kubernetes:v1.30.0 .
-atoll run my-kubernetes:v1.30.0 --masters ... --nodes ...
+docker buildx build -t <registry>/my-kubernetes:v1.30.0 --push .
+atoll pull <registry>/my-kubernetes:v1.30.0
+atoll run <registry>/my-kubernetes:v1.30.0 --masters ... --nodes ...
 ```
 
 ## Building from source
 
-Requirements: Linux, Go 1.27 or later, Make. `atoll` needs CGO for the overlay storage driver, so it can only be built on Linux.
+Requirements: Go 1.27 or later, Make. Every binary is built with CGO disabled, so no C compiler or system development libraries are needed and any host can cross-compile; the binaries only run on Linux.
 
 ```bash
-sudo apt-get install -y pkg-config libdevmapper-dev libbtrfs-dev libgpgme-dev build-essential
 make build BINS=atoll     # build a single binary
 make build                # build all binaries into bin/linux_<arch>/
 ```

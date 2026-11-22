@@ -1,4 +1,4 @@
-// Copyright © 2021 Alibaba Group Holding Ltd.
+// Copyright © 2026 atoll.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,50 +15,31 @@
 package buildimage
 
 import (
-	"reflect"
+	"os"
+	"path/filepath"
+	"slices"
 	"testing"
 )
 
-func TestParseYamlImages(t *testing.T) {
-	data, err := ParseYamlImages("/Users/cuisongliu/Workspaces/go/src/github.com/sealyun/cloud-kernel/runtime/cni/31901/etc")
-	if err != nil {
-		t.Error(err)
-		return
+func TestParseShimImagesMergesImageLists(t *testing.T) {
+	dir := t.TempDir()
+	lists := map[string]string{
+		"base.txt":  "registry.example.com/pause:3.10\n# comment\n\n  \"registry.example.com/coredns:v1.11\"  \n",
+		"extra.txt": "registry.example.com/pause:3.10\nregistry.example.com/lvscare:v1\n",
 	}
-	t.Logf("%v", data)
-}
+	for name, content := range lists {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o600); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
 
-func TestFilter(t *testing.T) {
-	type args struct {
-		images     []string
-		ignoreFile string
+	got, err := ParseShimImages(dir)
+
+	if err != nil {
+		t.Fatalf("parse shim images: %v", err)
 	}
-	tests := []struct {
-		name    string
-		args    args
-		want    []string
-		wantErr bool
-	}{
-		{
-			name: "filter",
-			args: args{
-				images:     []string{"docker.io/cilium/istio_proxy", "quay.io/cilium/cilium:v1.12.0", "quay.io/cilium/operator-generic:v1.12.0"},
-				ignoreFile: "test/ignore/.sealignore",
-			},
-			want:    []string{"docker.io/cilium/istio_proxy", "quay.io/cilium/cilium:v1.12.0"},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := Filter(tt.args.images, tt.args.ignoreFile)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Filter() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Filter() got = %v, want %v", got, tt.want)
-			}
-		})
+	want := []string{"registry.example.com/coredns:v1.11", "registry.example.com/lvscare:v1", "registry.example.com/pause:3.10"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("ParseShimImages() = %q, want %q", got, want)
 	}
 }

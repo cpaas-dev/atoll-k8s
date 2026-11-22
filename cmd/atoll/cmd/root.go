@@ -19,7 +19,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/cpaas-dev/atoll-k8s/internal/buildah"
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 	"github.com/cpaas-dev/atoll-k8s/internal/system"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/file"
@@ -32,8 +31,9 @@ var debug bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "atoll",
-	Short: "atoll is a Kubernetes distribution, a unified OS to manage cloud native applications.",
+	Use:          "atoll",
+	Short:        "atoll is a Kubernetes distribution, a unified OS to manage cloud native applications.",
+	SilenceUsage: true,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
@@ -53,7 +53,6 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(onBootOnDie)
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")
-	buildah.RegisterRootCommand(rootCmd)
 
 	groups := templates.CommandGroups{
 		{
@@ -84,12 +83,14 @@ func init() {
 		{
 			Message: "Experimental Commands:",
 			Commands: []*cobra.Command{
-				newRegistryCmd(rootCmd.Name()),
+				newRegistryCmd(),
 			},
 		},
 		{
-			Message:  "Container and Image Commands:",
-			Commands: buildah.AllSubCommands(),
+			Message: "Image Commands:",
+			Commands: []*cobra.Command{
+				newPullCmd(),
+			},
 		},
 	}
 	groups.Add(rootCmd)
@@ -98,10 +99,6 @@ func init() {
 
 	rootCmd.AddCommand(system.NewEnvCmd(constants.AppName))
 	rootCmd.AddCommand(optionsCommand(os.Stdout))
-}
-
-func setRequireBuildahAnnotation(cmd *cobra.Command) {
-	buildah.SetRequireBuildahAnnotation(cmd)
 }
 
 func onBootOnDie() {

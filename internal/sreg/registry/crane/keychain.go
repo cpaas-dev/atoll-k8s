@@ -37,8 +37,8 @@ const (
 	DefaultAuthKey = "https://" + name.DefaultRegistry + "/v1/"
 )
 
-// dockerHubHosts are the other host names Docker Hub credentials are stored under:
-// containers/image (and so GetAuthInfo) returns them as docker.io.
+// dockerHubHosts are the other host names Docker Hub credentials are stored under, such as
+// docker.io in Docker and containers auth files.
 var dockerHubHosts = []string{"docker.io", "registry-1.docker.io"}
 
 func NewDefaultKeychain(auths map[string]dockertypes.AuthConfig) authn.Keychain {

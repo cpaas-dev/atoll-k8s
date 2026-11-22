@@ -33,8 +33,6 @@ jobs:
     needs: [call_ci_workflow]
     runs-on: ubuntu-24.04
     steps:
-      - name: Install Dependencies
-        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
       - name: Download image-cri-shim
         uses: actions/download-artifact@v4
         with:

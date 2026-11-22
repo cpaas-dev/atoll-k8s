@@ -15,16 +15,7 @@
 package operators
 
 import (
-	"strings"
-
-	"k8s.io/apimachinery/pkg/util/json"
-
 	"github.com/cpaas-dev/atoll-k8s/test/e2e/testhelper/cmd"
-)
-
-const (
-	DockerTarFile = "/tmp/docker.tar"
-	OCITarFile    = "/tmp/oci.tar"
 )
 
 type fakeImageClient struct {
@@ -39,82 +30,8 @@ func NewFakeImage(atollCmd *cmd.AtollCmd) FakeImageInterface {
 
 var _ FakeImageInterface = &fakeImageClient{}
 
-func (f *fakeImageClient) ListImages(display bool) ([]DisplayImage, error) {
-	if display {
-		return nil, f.AtollCmd.ImageList()
-	}
-	data, err := f.AtollCmd.Executor.Exec(f.AtollCmd.BinPath, "images", "--json")
-	if err != nil {
-		return nil, err
-	}
-	var images []DisplayImage
-	err = json.Unmarshal(data, &images)
-	return images, err
-}
-
 func (f *fakeImageClient) PullImage(images ...string) error {
 	return f.AtollCmd.ImagePull(&cmd.PullOptions{
 		ImageRefs: images,
-		Quiet:     true,
 	})
-}
-
-func (f *fakeImageClient) RemoveImage(images ...string) error {
-	return f.AtollCmd.ImageRemove(images...)
-}
-
-func (f *fakeImageClient) DockerArchiveImage(name string) error {
-	return f.AtollCmd.ImageSave(name, DockerTarFile, "docker-archive")
-}
-
-func (f *fakeImageClient) OCIArchiveImage(name string) error {
-	return f.AtollCmd.ImageSave(name, OCITarFile, "oci-archive")
-}
-
-func (f *fakeImageClient) SaveImage(name, file string) error {
-	return f.AtollCmd.ImageSave(name, file, "")
-}
-
-func (f *fakeImageClient) SaveMultiImage(file string, name ...string) error {
-	return f.AtollCmd.ImageMultiSave(file, name...)
-}
-
-func (f *fakeImageClient) LoadImage(file string) error {
-	return f.AtollCmd.ImageLoad(file)
-}
-
-func (f *fakeImageClient) Create(name string, short bool) ([]byte, error) {
-	return f.AtollCmd.Create(&cmd.CreateOptions{
-		Short: short,
-		Image: name,
-	})
-}
-
-func (f *fakeImageClient) Merge(newImage string, images []string) error {
-	return f.AtollCmd.ImageMerge(&cmd.MergeOptions{
-		Tag:       []string{newImage},
-		ImageRefs: images,
-	})
-}
-
-func (f *fakeImageClient) FetchImageID(name string) (string, error) {
-	data, err := f.AtollCmd.Executor.Exec(f.BinPath, "images", "-q", name)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(data)), nil
-}
-func (f *fakeImageClient) BuildImage(image, context string, opts BuildOptions) error {
-	return f.AtollCmd.Build(&cmd.BuildOptions{
-		Tag:          image,
-		SaveImage:    opts.SaveImage,
-		Context:      context,
-		MaxPullProcs: opts.MaxPullProcs,
-		Pull:         opts.Pull,
-		Debug:        true,
-	})
-}
-
-func (f *fakeImageClient) TagImage(name, newName string) error {
-	return f.AtollCmd.ImageTag(name, newName)
 }

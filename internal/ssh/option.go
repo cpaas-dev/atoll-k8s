@@ -20,8 +20,9 @@ import (
 	"time"
 
 	"github.com/spf13/pflag"
-	"go.podman.io/storage/pkg/homedir"
 	"golang.org/x/crypto/ssh"
+
+	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/file"
 )
@@ -54,7 +55,7 @@ const (
 )
 
 func NewOption() *Option {
-	homedir := homedir.Get()
+	homedir := constants.GetHomeDir()
 	getSSHFile := func(filenames ...string) string {
 		for _, fn := range filenames {
 			absPath := path.Join(homedir, ".ssh", fn)

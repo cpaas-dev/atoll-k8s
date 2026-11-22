@@ -21,8 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cpaas-dev/atoll-k8s/test/e2e/suites/operators"
-
 	"github.com/cpaas-dev/atoll-k8s/test/e2e/testhelper/utils"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
@@ -48,9 +46,6 @@ type Applier struct {
 	RunImages      []string
 	ClusterName    string
 	ImageName      string
-	PatchImageName string
-	PatchImageTar  string
-	ImageTar       string
 	TestDir        string
 	SSH            *v1beta1.SSH
 }
@@ -72,9 +67,6 @@ func NewApplier(infra *terraform.InfraDetail) (*Applier, error) {
 		ClusterName:    settings.GetEnvWithDefault(settings.TestClusterName, "default"),
 		ImageName:      os.Getenv(settings.TestImageName),
 		RunImages:      strings.Split(os.Getenv(settings.TestRunImages), ","),
-		ImageTar:       os.Getenv(settings.TestImageTar),
-		PatchImageName: os.Getenv(settings.TestPatchImageName),
-		PatchImageTar:  os.Getenv(settings.TestPatchImageTar),
 		TestDir:        settings.DefaultTestDir,
 	}
 	if len(a.RunImages) == 0 {
@@ -98,69 +90,10 @@ func (a *Applier) initImage() error {
 	if err := a.RemoteCmd.AsyncExec("chmod +x " + settings.E2EConfig.AtollBinPath); err != nil {
 		return fmt.Errorf("chmod atoll bin: %v", err)
 	}
-	if a.ImageTar != "" {
-		if err := a.RemoteCmd.Copy(a.ImageTar, a.ImageTar); err != nil {
-			return fmt.Errorf("copy image tar to remote: %v", err)
-		}
-		if err := a.RemoteAtollCmd.ImageLoad(a.ImageTar); err != nil {
-			return fmt.Errorf("load image tar: %v", err)
-		}
-	} else {
-		if err := a.RemoteAtollCmd.ImagePull(&cmd2.PullOptions{
-			ImageRefs: []string{a.ImageName},
-			Quiet:     true,
-		}); err != nil {
-			return fmt.Errorf("pull image: %v", err)
-		}
-	}
-	if a.PatchImageName == "" {
-		return nil
-	}
-	if a.PatchImageTar != "" {
-		if err := a.RemoteCmd.Copy(a.PatchImageTar, a.PatchImageTar); err != nil {
-			return fmt.Errorf("copy patch image tar to remote: %v", err)
-		}
-		if strings.HasSuffix(a.PatchImageTar, settings.GzSuffix) {
-			if err := a.RemoteCmd.AsyncExec(fmt.Sprintf("gzip %s -d", a.PatchImageTar)); err != nil {
-				return fmt.Errorf("unzip patch image tar: %v", err)
-			}
-			a.PatchImageTar = strings.TrimSuffix(a.PatchImageTar, settings.GzSuffix)
-		}
-		if err := a.RemoteAtollCmd.ImageLoad(a.PatchImageTar); err != nil {
-			return fmt.Errorf("load patch image tar: %v", err)
-		}
-		images, err := operators.NewFakeImage(a.RemoteAtollCmd).ListImages(false)
-		if err != nil {
-			return fmt.Errorf("list images: %v", err)
-		}
-		logger.Info("images:", images)
-		patchImageName := ""
-		for _, image := range images {
-			for i := range image.Names {
-				if strings.Contains(image.Names[i], "atoll-patch") {
-					patchImageName = image.Names[i]
-					break
-				}
-			}
-			if patchImageName != "" {
-				a.PatchImageName = patchImageName
-				break
-			}
-		}
-	} else {
-		if err := a.RemoteAtollCmd.ImagePull(&cmd2.PullOptions{
-			ImageRefs: []string{a.PatchImageName},
-			Quiet:     true,
-		}); err != nil {
-			return fmt.Errorf("pull patch image: %v", err)
-		}
-	}
-	if err := a.RemoteAtollCmd.ImageMerge(&cmd2.MergeOptions{
-		Quiet:     true,
-		ImageRefs: []string{a.ImageName, a.PatchImageName},
-		Tag:       []string{a.ImageName},
+	if err := a.RemoteAtollCmd.ImagePull(&cmd2.PullOptions{
+		ImageRefs: []string{a.ImageName},
 	}); err != nil {
-		return fmt.Errorf("merge image: %v", err)
+		return fmt.Errorf("pull image: %v", err)
 	}
 	return nil
 }

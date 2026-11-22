@@ -36,20 +36,15 @@ const (
 	DefaultInfraUUID = "60a6f958-e9af-4bb5-a401-1553fc05d78b"
 )
 
-const GzSuffix = ".gz"
-
 const (
-	DefaultTestImageName  = "registry.cn-shanghai.aliyuncs.com/labring/kubernetes:v1.25.0"
-	DefaultTestImageTar   = "/tmp/kubernetes-v1.25.0.tar.gz"
-	DefaultPatchImageName = "registry.cn-shanghai.aliyuncs.com/labring/kubernetes:v1.25.0-patch"
-	DefaultPatchImageTar  = "/tmp/kubernetes-v1.25.0-patch.tar.gz"
-	HelmImageName         = "registry.cn-shanghai.aliyuncs.com/labring/helm:v3.8.2"
-	CalicoImageName       = "registry.cn-shanghai.aliyuncs.com/labring/calico:v3.25.0"
-	DefaultImageRepo      = "registry.cn-shanghai.aliyuncs.com/labring"
-	DockerIoRepo          = "registry.cn-shanghai.aliyuncs.com"
-	DefaultInfraDriver    = AliyunInfraDriver
-	AliyunInfraDriver     = "aliyun"
-	AWSInfraDriver        = "aws"
+	DefaultTestImageName = "registry.cn-shanghai.aliyuncs.com/labring/kubernetes:v1.25.0"
+	HelmImageName        = "registry.cn-shanghai.aliyuncs.com/labring/helm:v3.8.2"
+	CalicoImageName      = "registry.cn-shanghai.aliyuncs.com/labring/calico:v3.25.0"
+	DefaultImageRepo     = "registry.cn-shanghai.aliyuncs.com/labring"
+	DockerIoRepo         = "registry.cn-shanghai.aliyuncs.com"
+	DefaultInfraDriver   = AliyunInfraDriver
+	AliyunInfraDriver    = "aliyun"
+	AWSInfraDriver       = "aws"
 )
 
 func GetWorkDir() string {

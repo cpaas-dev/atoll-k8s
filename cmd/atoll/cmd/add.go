@@ -64,7 +64,6 @@ func newAddCmd() *cobra.Command {
 			logger.Info(getContact())
 		},
 	}
-	setRequireBuildahAnnotation(addCmd)
 	addArgs.RegisterFlags(addCmd.Flags(), "be joined", "join")
 	return addCmd
 }

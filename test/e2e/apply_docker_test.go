@@ -70,51 +70,6 @@ var _ = Describe("E2E_atoll_apply_docker_test", func() {
 			err = fakeCheckInterface.Verify()
 			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
-		It("atoll apply single by docker-buildimage", func() {
-
-			By("build image from dockerfile")
-			kubeadmVar := `
-apiVersion: kubeadm.k8s.io/v1beta2
-kind: ClusterConfiguration
-networking:
-  serviceSubnet: "100.55.0.0/16"
-  podSubnet: "10.160.0.0/12"
-`
-			dFile := config.RootfsDockerfile{
-				KubeadmYaml: kubeadmVar,
-				BaseImage:   "docker.io/labring/kubernetes-docker:v1.25.0",
-			}
-			var tmpdir string
-			tmpdir, err = dFile.Write()
-			utils.CheckErr(err, fmt.Sprintf("failed to create dockerfile: %v", err))
-			err = fakeClient.Image.BuildImage("apply-hack-docker:kubeadm-network", tmpdir, operators.BuildOptions{
-				MaxPullProcs: 5,
-				SaveImage:    true,
-			})
-			utils.CheckErr(err, fmt.Sprintf("failed to build image: %v", err))
-			By("generate Clusterfile")
-			clusterfileConfig := config.Clusterfile{
-				BinData:  kubeadm.PackageName + "/custome-docker-svc.yaml",
-				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4(), "labring/kubernetes-docker:v1.25.0": "apply-hack-docker:kubeadm-network"},
-			}
-			applyfile, err := clusterfileConfig.Write()
-			utils.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
-
-			By("apply kubernete image using build image")
-			err = fakeClient.Cluster.Apply(applyfile)
-			utils.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
-			opts := &checkers.FakeOpts{
-				Socket:      "/var/run/cri-dockerd.sock",
-				Cgroup:      "",
-				PodCIDR:     "10.160.0.0/12",
-				ServiceCIDR: "100.56.0.0/16",
-				Images:      clusterfileConfig.Cluster.Spec.Image,
-			}
-			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", opts)
-			utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
-			err = fakeCheckInterface.Verify()
-			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
-		})
 	})
 
 })

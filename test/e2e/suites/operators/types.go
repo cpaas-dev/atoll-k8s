@@ -16,23 +16,6 @@ limitations under the License.
 
 package operators
 
-type DisplayImage struct {
-	ID           string   `json:"id"`
-	Names        []string `json:"names"`
-	Digest       string   `json:"digest"`
-	Createdat    string   `json:"createdat"`
-	Size         string   `json:"size"`
-	Created      int      `json:"created"`
-	Createdatraw string   `json:"createdatraw"`
-	Readonly     bool     `json:"readonly"`
-}
-type BuildOptions struct {
-	Compress     bool
-	MaxPullProcs int
-	Pull         string
-	SaveImage    bool
-}
-
 type PodStruct struct {
 	//var pod PodStruct
 	//err = json.Unmarshal(data, &pod)

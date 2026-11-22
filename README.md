@@ -31,7 +31,7 @@ Atoll-K8s 是一个零依赖的独立二进制工具，用于管理 Kubernetes �
 - 证书有效期 99 年，支持证书更新、集群备份与升级。
 - 通过 IPVS 本地负载均衡实现 API Server 高可用，资源占用低。
 - 节点增删便捷。
-- 集群镜像基于 Buildah SDK 构建，完全兼容 OCI 标准，可按需组合存储、数据库等组件。
+- 集群镜像是标准 OCI 镜像，可用 docker buildx 等常用工具构建，并按需组合存储、数据库等组件。
 
 ## 快速开始
 
@@ -42,30 +42,33 @@ curl -sfL https://raw.githubusercontent.com/cpaas-dev/atoll-k8s/main/scripts/ins
   | sh -s <version> cpaas-dev/atoll-k8s
 ```
 
-创建集群：
+拉取集群镜像并创建集群。`run` 等集群命令只使用本地镜像，需要先用 `atoll pull` 拉取：
 
 ```bash
+atoll pull <registry>/kubernetes:<version> <registry>/helm:<version> <registry>/calico:<version>
 atoll run <registry>/kubernetes:<version> <registry>/helm:<version> <registry>/calico:<version> \
   --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
   --nodes 192.168.64.21,192.168.64.19 \
   -p <ssh-password>
 ```
 
-集群镜像需要为 Atoll-K8s 构建。上游 Sealos 的集群镜像（如 `labring/kubernetes`）依赖 `SEALOS_*` 环境变量和 `sealctl`，不能直接使用。
+镜像仓库只提供 HTTP 时给 `atoll pull` 加 `--plain-http`，使用自签名证书时加 `--insecure`。认证、镜像加速和短名沿用 `docker login` 写入的凭据和 `registries.conf`。离线环境可以直接传入 OCI 格式的镜像包，例如 `atoll run kubernetes.tar ...`。
 
-构建并运行自定义集群镜像：
+集群镜像需要为 Atoll-K8s 构建：rootfs 的内容放在镜像的 `/cpaas` 目录下，atoll 只导出这个目录。上游 Sealos 的集群镜像（如 `labring/kubernetes`）依赖 `SEALOS_*` 环境变量和 `sealctl`，不能直接使用。
+
+atoll 不提供构建命令，可以用 `docker buildx` 构建集群镜像，Dockerfile 里用 `COPY rootfs/ /cpaas/` 放入内容：
 
 ```bash
-atoll build -t my-kubernetes:v1.30.0 .
-atoll run my-kubernetes:v1.30.0 --masters ... --nodes ...
+docker buildx build -t <registry>/my-kubernetes:v1.30.0 --push .
+atoll pull <registry>/my-kubernetes:v1.30.0
+atoll run <registry>/my-kubernetes:v1.30.0 --masters ... --nodes ...
 ```
 
 ## 从源码构建
 
-环境要求：Linux、Go 1.27 及以上、Make。`atoll` 依赖 CGO（overlay 存储驱动），只能在 Linux 上构建。
+环境要求：Go 1.27 及以上、Make。所有二进制都关闭 CGO 编译，不需要 C 编译器和系统开发库，可以在任意平台交叉编译；编译产物只能在 Linux 上运行。
 
 ```bash
-sudo apt-get install -y pkg-config libdevmapper-dev libbtrfs-dev libgpgme-dev build-essential
 make build BINS=atoll     # 构建单个二进制
 make build                # 构建全部二进制，产物位于 bin/linux_<arch>/
 ```

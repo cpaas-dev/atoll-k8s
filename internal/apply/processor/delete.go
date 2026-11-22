@@ -18,10 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/cpaas-dev/atoll-k8s/internal/bootstrap"
-	"github.com/cpaas-dev/atoll-k8s/internal/buildah"
 	"github.com/cpaas-dev/atoll-k8s/internal/clusterfile"
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 	"github.com/cpaas-dev/atoll-k8s/internal/filesystem/rootfs"
@@ -35,7 +32,6 @@ import (
 var ForceDelete bool
 
 type DeleteProcessor struct {
-	Buildah     buildah.Interface
 	ClusterFile clusterfile.Interface
 }
 
@@ -66,14 +62,14 @@ func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 		d.Reset,
 		d.UndoBootstrap,
 		d.UnMountRootfs,
-		d.UnMountImage,
+		// CleanFS also removes the rootfs exports in the mounts dir of the cluster.
 		d.CleanFS,
 	)
 	return todoList, nil
 }
 
 func (d *DeleteProcessor) PreProcess(cluster *v2.Cluster) error {
-	return NewPreProcessError(SyncClusterStatus(cluster, d.Buildah, true))
+	return NewPreProcessError(SyncClusterStatus(cluster, true))
 }
 
 func (d *DeleteProcessor) UndoBootstrap(cluster *v2.Cluster) error {
@@ -118,17 +114,6 @@ func (d *DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 	return fs.UnMountRootfs(cls, hosts)
 }
 
-func (d *DeleteProcessor) UnMountImage(cluster *v2.Cluster) error {
-	eg, _ := errgroup.WithContext(context.Background())
-	for _, mount := range cluster.Status.Mounts {
-		mount := mount
-		eg.Go(func() error {
-			return d.Buildah.Delete(mount.Name)
-		})
-	}
-	return eg.Wait()
-}
-
 func (d *DeleteProcessor) CleanFS(cluster *v2.Cluster) error {
 	workDir := constants.ClusterDir(cluster.Name)
 	dataDir := constants.NewPathResolver(cluster.Name).Root()
@@ -136,13 +121,7 @@ func (d *DeleteProcessor) CleanFS(cluster *v2.Cluster) error {
 }
 
 func NewDeleteProcessor(name string, clusterFile clusterfile.Interface) (Interface, error) {
-	bder, err := buildah.New(name)
-	if err != nil {
-		return nil, err
-	}
-
 	return DeleteProcessor{
-		Buildah:     bder,
 		ClusterFile: clusterFile,
 	}, nil
 }

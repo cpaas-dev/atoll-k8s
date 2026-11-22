@@ -6,11 +6,13 @@ Local, where `atoll` runs:
 
 - Clusterfile: ~/.atoll/<clusterName>/Clusterfile
 - logs: ~/.atoll/logs
+- image store: ~/.atoll/images, one OCI image layout filled by `atoll pull` and `atoll run <archive>`
+- rootfs exports: ~/.atoll/<clusterName>/mounts/<name>, the `/cpaas` dir of each cluster image, recorded in `<name>.json`
 - pki: ~/.atoll/<clusterName>/pki
 - admin.conf: ~/.atoll/<clusterName>/etc/admin.conf
 - tmp: ~/.atoll/<clusterName>/tmp
 
-Hosts, `<rootfs>` is /var/lib/atoll/data/<clusterName>/rootfs:
+Hosts, `<rootfs>` is /var/lib/atoll/data/<clusterName>/rootfs, the content of `/cpaas` in the cluster image:
 
 - configs: /var/lib/atoll/data/<clusterName>/etc
 - etc: <rootfs>/etc

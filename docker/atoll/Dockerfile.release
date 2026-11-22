@@ -1,8 +1,5 @@
 FROM ubuntu:22.04
 
-RUN  apt update -y \
-    && apt install -y uidmap fuse-overlayfs \
-    && rm -rf /var/lib/apt/lists/*
 
 COPY atoll /usr/bin/
 

@@ -80,50 +80,6 @@ type CertOptions struct {
 	AltName []string
 }
 
-type BuildOptions struct {
-	AllPlatforms       bool
-	Debug              bool
-	Authfile           string
-	BuildContext       []string
-	BuildArg           []string
-	CertDir            string
-	Creds              string
-	Context            string
-	DisableCompression bool
-	DNS                string
-	DNSOption          []string
-	DNSSearch          []string
-	Env                []string
-	File               string
-	ForceRm            bool
-	Format             string
-	From               string
-	HTTPProxy          bool
-	Ignorefile         string
-	Jobs               int
-	Label              []string
-	Manifest           string
-	MaxPullProcs       int
-	All                bool
-	Platform           string
-	Pull               string
-	Quiet              bool
-	Retry              int
-	RetryDelay         string
-	Rm                 bool
-	SaveImage          bool
-	ShmSize            string
-	Tag                string
-}
-
-type CreateOptions struct {
-	Cluster  string
-	Platform string
-	Debug    bool
-	Short    bool
-	Image    string
-}
-
 func (ro *RunOptions) Args() []string {
 	if ro.SSH == nil {
 		ro.SSH = &v1beta1.SSH{}
@@ -163,50 +119,6 @@ func (ao *AddOptions) Args() []string {
 		appendFlagsWithValues("--debug", ao.Debug).
 		appendFlagsWithValues("--nodes", strings.Join(ao.Nodes, ",")).
 		appendFlagsWithValues("--cluster", ao.Cluster)
-}
-
-func (bo *BuildOptions) Args() []string {
-	var args Args = []string{}
-	return args.appendFlagsWithValues("--build-arg", bo.BuildArg).
-		appendFlagsWithValues("--debug", bo.Debug).
-		appendFlagsWithValues("--build-context", bo.BuildContext).
-		appendFlagsWithValues("--cert-dir", bo.CertDir).
-		appendFlagsWithValues("--creds", bo.Creds).
-		appendFlagsWithValues("--disable-compression", bo.DisableCompression).
-		appendFlagsWithValues("--dns", bo.DNS).
-		appendFlagsWithValues("--dns-option", bo.DNSOption).
-		appendFlagsWithValues("--dns-search", bo.DNSSearch).
-		appendFlagsWithValues("--env", bo.Env).
-		appendFlagsWithValues("--file", bo.File).
-		appendFlagsWithValues("--force-rm", bo.ForceRm).
-		appendFlagsWithValues("--format", bo.Format).
-		appendFlagsWithValues("--from", bo.From).
-		appendFlagsWithValues("--http-proxy", bo.HTTPProxy).
-		appendFlagsWithValues("--ignorefile", bo.Ignorefile).
-		appendFlagsWithValues("--jobs", bo.Jobs).
-		appendFlagsWithValues("--label", bo.Label).
-		appendFlagsWithValues("--manifest", bo.Manifest).
-		appendFlagsWithValues("--max-pull-procs", bo.MaxPullProcs).
-		appendFlagsWithValues("--all", bo.All).
-		appendFlagsWithValues("--platform", bo.Platform).
-		appendFlagsWithValues("--pull", bo.Pull).
-		appendFlagsWithValues("--quiet", bo.Quiet).
-		appendFlagsWithValues("--retry", bo.Retry).
-		appendFlagsWithValues("--retry-delay", bo.RetryDelay).
-		appendFlagsWithValues("--rm", bo.Rm).
-		appendFlagsWithValues("--save-image", bo.SaveImage).
-		appendFlagsWithValues("--shm-size", bo.ShmSize).
-		appendFlagsWithValues("--tag", bo.Tag).
-		appendFlagsWithValues("", bo.Context)
-}
-
-func (co *CreateOptions) Args() []string {
-	var args Args = []string{}
-	return args.appendFlagsWithValues("--cluster", co.Cluster).
-		appendFlagsWithValues("--debug", co.Debug).
-		appendFlagsWithValues("--platform", co.Platform).
-		appendFlagsWithValues("--short", co.Short).
-		appendFlagsWithValues("", co.Image)
 }
 
 func (do *DeleteOptions) Args() []string {

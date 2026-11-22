@@ -21,7 +21,6 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/kubectl/pkg/util/templates"
 
-	"github.com/cpaas-dev/atoll-k8s/internal/buildah"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 )
 
@@ -31,8 +30,9 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "atollctl",
-	Short: "atollctl is a command-line tool for managing and configuring the Atoll system.",
+	Use:          "atollctl",
+	Short:        "atollctl is a command-line tool for managing and configuring the Atoll system.",
+	SilenceUsage: true,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
@@ -55,7 +55,6 @@ func init() {
 	})
 
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")
-	buildah.RegisterRootCommand(rootCmd)
 	groups := templates.CommandGroups{
 		{
 			Message: "Network Management Commands:",
@@ -82,10 +81,6 @@ func init() {
 				newControlPlaneModeCmd(),
 				newTokenCmd(),
 			},
-		},
-		{
-			Message:  "Container and Image Commands:",
-			Commands: buildah.AllSubCommands(),
 		},
 	}
 	groups.Add(rootCmd)

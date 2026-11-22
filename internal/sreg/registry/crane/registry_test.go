@@ -21,8 +21,6 @@ import (
 	"testing"
 
 	"github.com/moby/moby/api/types/registry"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewRegistry(t *testing.T) {
@@ -80,19 +78,4 @@ func TestNewRegistry(t *testing.T) {
 			t.Logf("NewRegistry() got = %v", got)
 		})
 	}
-}
-
-func TestGetAuthInfo(t *testing.T) {
-	t.Run("no credentials found", func(t *testing.T) {
-		authConfigs, err := GetAuthInfo(nil)
-		require.NoError(t, err)
-		require.Empty(t, authConfigs)
-	})
-	t.Run("has credentials found", func(t *testing.T) {
-		t.Setenv("DOCKER_CONFIG", filepath.Join("testdata"))
-		authConfigs, err := GetAuthInfo(nil)
-		require.NoError(t, err)
-		require.NotEmpty(t, authConfigs)
-		t.Logf("%+v", authConfigs)
-	})
 }

@@ -17,13 +17,13 @@ package processor
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	"github.com/cpaas-dev/atoll-k8s/internal/buildah"
 	"github.com/cpaas-dev/atoll-k8s/internal/clusterfile"
 	"github.com/cpaas-dev/atoll-k8s/internal/config"
 	"github.com/cpaas-dev/atoll-k8s/internal/filesystem/rootfs"
@@ -34,7 +34,6 @@ import (
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/confirm"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/maps"
-	"github.com/cpaas-dev/atoll-k8s/internal/utils/rand"
 	stringsutil "github.com/cpaas-dev/atoll-k8s/internal/utils/strings"
 )
 
@@ -43,7 +42,7 @@ var ForceOverride bool
 type InstallProcessor struct {
 	maintenanceContext context.Context
 	ClusterFile        clusterfile.Interface
-	Buildah            buildah.Interface
+	Images             *ClusterImages
 	Runtime            runtime.Interface
 	Guest              guest.Interface
 	NewMounts          []v2.MountImage
@@ -95,7 +94,7 @@ func (c *InstallProcessor) SyncStatusAndCheck(_ *v2.Cluster) error {
 		return err
 	}
 	current := c.ClusterFile.GetCluster()
-	if err = SyncClusterStatus(current, c.Buildah, false); err != nil {
+	if err = SyncClusterStatus(current, false); err != nil {
 		return err
 	}
 	imageList := sets.NewString(current.Spec.Image...)
@@ -130,19 +129,10 @@ func (c *InstallProcessor) ConfirmOverrideApps(_ *v2.Cluster) error {
 
 func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 	logger.Info("Executing PreProcess Pipeline in InstallProcessor")
-	if err := c.Buildah.Pull(c.NewImages, buildah.WithPullPolicyOption(buildah.PullIfMissing.String())); err != nil {
-		return err
-	}
-	imageTypes := sets.NewString()
+	// Fail before changing the cluster when an image is missing from the local store.
 	for _, image := range c.NewImages {
-		oci, err := c.Buildah.InspectImage(image)
-		if err != nil {
+		if _, err := c.Images.Inspect(c.maintenanceContext, image); err != nil {
 			return err
-		}
-		if oci.OCIv1.Config.Labels != nil {
-			imageTypes.Insert(maps.GetFromKeys(oci.OCIv1.Config.Labels, v2.ImageTypeKeys...))
-		} else {
-			imageTypes.Insert(string(v2.AppImage))
 		}
 	}
 	// This code ensures that `mount` always contains the latest `MountImage` instances from `cluster.Status.Mounts`
@@ -165,38 +155,27 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 
 	for _, img := range c.NewImages {
 		index, mount := cluster.FindImage(img)
-		var ctrName string
 		if mount != nil {
 			if !ForceOverride {
 				continue
 			}
 			logger.Debug("trying to override app %s", img)
-			if err := c.Buildah.Delete(mount.Name); err != nil {
+			if err := c.Images.Remove(*mount); err != nil {
 				return err
 			}
 		}
-		ctrName = rand.Generator(8)
 		cluster.Spec.Image = stringsutil.Merge(cluster.Spec.Image, img)
-		bderInfo, err := c.Buildah.Create(ctrName, img)
+		newMount, err := c.Images.Mount(c.maintenanceContext, img, nil)
 		if err != nil {
 			return err
 		}
-		mount = &v2.MountImage{
-			Name:       bderInfo.Container,
-			MountPoint: bderInfo.MountPoint,
-			ImageName:  img,
-		}
-
-		if err = OCIToImageMount(c.Buildah, mount); err != nil {
-			return err
-		}
-		mount.Env = maps.Merge(mount.Env, c.ExtraEnvs)
+		newMount.Env = maps.Merge(newMount.Env, c.ExtraEnvs)
 		// This code ensures that `cluster.Status.Mounts` always contains the latest `MountImage` instances
 		if index >= 0 {
 			cluster.Status.Mounts = append(cluster.Status.Mounts[:index], cluster.Status.Mounts[index+1:]...)
 		}
-		cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
-		c.NewMounts = append(c.NewMounts, *mount)
+		cluster.Status.Mounts = append(cluster.Status.Mounts, newMount)
+		c.NewMounts = append(c.NewMounts, newMount)
 	}
 
 	rt, err := factory.New(cluster, c.ClusterFile.GetRuntimeConfig())
@@ -221,7 +200,15 @@ func (c *InstallProcessor) UpgradeIfNeed(cluster *v2.Cluster) error {
 			return err
 		}
 		//upgrade success; replace the old cluster mount
+		previous := slices.Clone(cluster.Status.Mounts)
 		cluster.ReplaceRootfsImage()
+		for _, mount := range previous {
+			if !slices.ContainsFunc(cluster.Status.Mounts, func(m v2.MountImage) bool { return m.Name == mount.Name }) {
+				if err := c.Images.Remove(mount); err != nil {
+					return err
+				}
+			}
+		}
 	}
 	return nil
 }
@@ -276,7 +263,7 @@ func (c *InstallProcessor) RunGuest(cluster *v2.Cluster) error {
 }
 
 func NewInstallProcessor(ctx context.Context, clusterFile clusterfile.Interface, images []string) (Interface, error) {
-	bder, err := buildah.New(clusterFile.GetCluster().Name)
+	clusterImages, err := NewClusterImages(ctx, clusterFile.GetCluster().Name)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +276,7 @@ func NewInstallProcessor(ctx context.Context, clusterFile clusterfile.Interface,
 	return &InstallProcessor{
 		maintenanceContext: ctx,
 		ClusterFile:        clusterFile,
-		Buildah:            bder,
+		Images:             clusterImages,
 		Guest:              gs,
 		NewImages:          images,
 		ExtraEnvs:          GetEnvs(ctx),

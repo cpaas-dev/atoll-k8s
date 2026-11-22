@@ -7,9 +7,8 @@ description: 编译、测试、lint、格式化 Atoll-K8s Go 代码库（atoll�
 
 ## 环境
 
-- 只支持 Linux。atoll 和 atollctl 开启 CGO 编译（overlay driver 需要），需要宿主机有 C 编译器，会自动探测 cc、gcc 或 clang。
+- 所有二进制都用 `CGO_ENABLED=0` 编译，不需要 C 编译器和系统开发库；产物只能在 Linux 上运行。
 - Go 1.27（CI 固定为 1.27.3）。
-- 系统依赖：`sudo apt-get install -y pkg-config build-essential libgpgme-dev libbtrfs-dev libdevmapper-dev`
 
 ## 目录结构
 
@@ -29,7 +28,7 @@ make help                         # 列出所有 target 和选项
 
 - 产物输出到 `bin/<os>_<arch>/`，例如 `bin/linux_amd64/atoll`。
 - 冷编译要编译整个依赖图，需要几分钟；增量编译约 15 秒。冷编译时 Bash 超时设为 600000 ms（或放到后台运行），不要中途打断。
-- 交叉编译用 `make build.multiarch PLATFORMS="linux_arm64 linux_amd64"`。CGO 二进制需要目标平台的工具链，例如 `CC_linux_arm64=aarch64-linux-gnu-gcc`；lvscare 和 image-cri-shim 使用 `CGO_ENABLED=0`，在任何平台都能交叉编译。
+- 交叉编译用 `make build.multiarch PLATFORMS="linux_arm64 linux_amd64"`，不需要额外工具链。
 
 ## 验证改动
 
@@ -49,7 +48,7 @@ make help                         # 列出所有 target 和选项
 ./bin/linux_amd64/atollctl hostname
 ```
 
-涉及容器存储或集群的命令（`atoll images`、`gen`、`run`、`apply`、`build` 等）需要 root 权限以及 unshare 和 overlay 挂载。在沙箱里会报 "Operation not permitted"，这是环境限制，不是回归。
+集群命令（`run`、`apply`、`add`、`delete`、`reset`、`gen`）只使用 `atoll pull` 拉到本地镜像库（`~/.atoll/images`）的镜像，导出 rootfs 需要 root 权限。测试时用 `ATOLL_RUNTIME_ROOT=/tmp/<dir>` 把运行目录指到临时目录，不要往用户的 `~/.atoll` 写东西；不要执行真正的 `atoll run`，它会在本机安装集群。
 
 ## 测试
 

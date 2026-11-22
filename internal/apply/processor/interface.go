@@ -21,9 +21,6 @@ import (
 
 	"slices"
 
-	"go.podman.io/storage"
-
-	"github.com/cpaas-dev/atoll-k8s/internal/buildah"
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 	"github.com/cpaas-dev/atoll-k8s/internal/exec"
 	"github.com/cpaas-dev/atoll-k8s/internal/filesystem/registry"
@@ -32,7 +29,6 @@ import (
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/confirm"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/maps"
-	"github.com/cpaas-dev/atoll-k8s/internal/utils/rand"
 )
 
 type Interface interface {
@@ -40,86 +36,23 @@ type Interface interface {
 	Execute(cluster *v2.Cluster) error
 }
 
-func SyncClusterStatus(cluster *v2.Cluster, bdah buildah.Interface, reset bool) error {
+// SyncClusterStatus fills cluster.Status.Mounts from the mount records of the cluster
+// when the status has none: every recorded mount with reset, otherwise the mounts of
+// images in cluster.Spec.Image.
+func SyncClusterStatus(cluster *v2.Cluster, reset bool) error {
 	if cluster.Status.Mounts == nil {
-		containers, err := bdah.ListContainers()
+		recorded, err := recordedMounts(cluster.Name)
 		if err != nil {
 			return err
 		}
 		cluster.Status.Mounts = make([]v2.MountImage, 0)
-		for _, ctr := range containers {
-			bderInfo, err := bdah.InspectContainer(ctr.ContainerName)
-			if err != nil {
-				return err
-			}
-			mount := &v2.MountImage{
-				MountPoint: bderInfo.MountPoint,
-				ImageName:  ctr.ImageName,
-				Name:       ctr.ContainerName,
-			}
-			if err = OCIToImageMount(bdah, mount); err != nil {
-				return err
-			}
-
-			if reset || slices.Contains(cluster.Spec.Image, ctr.ImageName) {
-				cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
+		for _, mount := range recorded {
+			if reset || slices.Contains(cluster.Spec.Image, mount.ImageName) {
+				cluster.Status.Mounts = append(cluster.Status.Mounts, mount)
 			}
 		}
 	}
 	logger.Debug("sync cluster status is: %s", cluster.String())
-	return nil
-}
-
-type imageInspector interface {
-	InspectImage(imgName string, opts ...string) (*buildah.InspectOutput, error)
-}
-
-func inspectImage(iist imageInspector, image string) (*buildah.InspectOutput, error) {
-	ret, err := iist.InspectImage(image)
-	if err != nil {
-		if errors.Is(err, storage.ErrImageUnknown) || errors.Is(err, storage.ErrNotAnImage) {
-			logger.Debug("cannot find image in local storage, trying to inspect from remote")
-			ret, err = iist.InspectImage(image, "docker")
-		}
-	}
-	return ret, err
-}
-
-func OCIToImageMount(inspector imageInspector, mount *v2.MountImage) error {
-	oci, err := inspectImage(inspector, mount.ImageName)
-	if err != nil {
-		return err
-	}
-
-	mount.Env = maps.FromSlice(oci.OCIv1.Config.Env)
-	delete(mount.Env, "PATH")
-	// mount.Entrypoint
-	var entrypoint []string
-	for _, cmd := range oci.OCIv1.Config.Entrypoint {
-		if cmd == "/bin/sh" || cmd == "-c" {
-			continue
-		}
-		entrypoint = append(entrypoint, cmd)
-	}
-	mount.Entrypoint = entrypoint
-
-	//mount.Cmd
-	cmds := oci.OCIv1.Config.Cmd
-	var newCMDs []string
-	for _, cmd := range cmds {
-		if cmd == "/bin/sh" || cmd == "-c" {
-			continue
-		}
-		newCMDs = append(newCMDs, cmd)
-	}
-	mount.Cmd = newCMDs
-	mount.Labels = oci.OCIv1.Config.Labels
-	imageType := v2.AppImage
-	typeKey := maps.GetFromKeys(mount.Labels, v2.ImageTypeKeys...)
-	if typeKey != "" {
-		imageType = v2.ImageType(typeKey)
-	}
-	mount.Type = imageType
 	return nil
 }
 
@@ -160,7 +93,10 @@ func getIndexOfContainerInMounts(mounts []v2.MountImage, imageName string) int {
 	return -1
 }
 
-func MountClusterImages(bdah buildah.Interface, cluster *v2.Cluster, skipApp bool) error {
+// MountClusterImages exports the rootfs of every image in cluster.Spec.Image that is not
+// exported yet and records it in cluster.Status.Mounts. With skipApp, application images
+// and images missing from the local store are skipped.
+func MountClusterImages(ctx context.Context, images *ClusterImages, cluster *v2.Cluster, skipApp bool) error {
 	if cluster.Status.Mounts == nil {
 		cluster.Status.Mounts = make([]v2.MountImage, 0)
 	}
@@ -168,17 +104,18 @@ func MountClusterImages(bdah buildah.Interface, cluster *v2.Cluster, skipApp boo
 	activeRootfs := cluster.GetRootfsImage()
 	var obsoleteRootfs []string
 	for _, img := range cluster.Spec.Image {
-		info, err := inspectImage(bdah, img)
+		info, err := images.Inspect(ctx, img)
 		if err != nil {
 			if skipApp {
+				logger.Warn("skip image %s: %v", img, err)
 				continue
 			}
 			return err
 		}
 		var imageType string
-		if info.OCIv1.Config.Labels != nil {
-			imageType = maps.GetFromKeys(info.OCIv1.Config.Labels, v2.ImageTypeKeys...)
-			imageVersion := maps.GetFromKeys(info.OCIv1.Config.Labels, v2.ImageVersionKeys...)
+		if info.Labels != nil {
+			imageType = maps.GetFromKeys(info.Labels, v2.ImageTypeKeys...)
+			imageVersion := maps.GetFromKeys(info.Labels, v2.ImageVersionKeys...)
 			if imageType == string(v2.RootfsImage) {
 				// Older inventories retained replaced rootfs names in spec.image.
 				// Scaling must distribute the committed rootfs, including when an
@@ -199,53 +136,41 @@ func MountClusterImages(bdah buildah.Interface, cluster *v2.Cluster, skipApp boo
 			continue
 		}
 
-		err = bdah.Pull([]string{img}, buildah.WithPullPolicyOption(buildah.PullIfMissing.String()))
-		if err != nil {
-			return err
-		}
 		idx := getIndexOfContainerInMounts(cluster.Status.Mounts, img)
-		var ctrName string
+		var existing *v2.MountImage
 		if idx >= 0 {
-			ctrName = cluster.Status.Mounts[idx].Name
-		} else {
-			ctrName = rand.Generator(8)
+			existing = &cluster.Status.Mounts[idx]
 		}
-		// recreate container anyway, this function call will remount the mount point of the image
-		// since after the host reboot, the `merged` dir will become an empty dir when we using `overlayfs` as driver
-		bderInfo, err := bdah.Create(ctrName, img)
+		mount, err := images.Mount(ctx, img, existing)
 		if err != nil {
-			return err
-		}
-		mount := &v2.MountImage{
-			Name:       bderInfo.Container,
-			ImageName:  img,
-			MountPoint: bderInfo.MountPoint,
-		}
-		if err = OCIToImageMount(bdah, mount); err != nil {
 			return err
 		}
 		if idx >= 0 {
 			mount.Env = maps.Merge(mount.Env, cluster.Status.Mounts[idx].Env)
-			cluster.Status.Mounts[idx] = *mount
+			cluster.Status.Mounts[idx] = mount
 		} else {
-			cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
+			cluster.Status.Mounts = append(cluster.Status.Mounts, mount)
 		}
 	}
 
 	if !hasRootfsType {
 		return errors.New("can't apply application type images only since RootFS type image is not applied yet")
 	}
-	images := cluster.Spec.Image[:0]
+	kept := cluster.Spec.Image[:0]
 	for _, image := range cluster.Spec.Image {
 		if !slices.Contains(obsoleteRootfs, image) {
-			images = append(images, image)
+			kept = append(kept, image)
 		}
 	}
-	cluster.Spec.Image = images
+	cluster.Spec.Image = kept
 	mounts := cluster.Status.Mounts[:0]
 	for _, mount := range cluster.Status.Mounts {
 		if !slices.Contains(obsoleteRootfs, mount.ImageName) {
 			mounts = append(mounts, mount)
+			continue
+		}
+		if err := images.Remove(mount); err != nil {
+			return err
 		}
 	}
 	cluster.Status.Mounts = mounts

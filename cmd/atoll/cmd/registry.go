@@ -20,18 +20,13 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/registry/commands"
-	sregcmd "github.com/cpaas-dev/atoll-k8s/internal/sreg/registry/commands"
 )
 
-func newRegistryCmd(examplePrefix string) *cobra.Command {
+func newRegistryCmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "registry",
 		Short: "registry related",
 	}
-	examplePrefix = examplePrefix + " registry"
 	cmd.AddCommand(commands.NewRegistryPasswdCmd())
-	cmd.AddCommand(sregcmd.NewRegistryImageSaveCmd(examplePrefix))
-	cmd.AddCommand(sregcmd.NewSyncRegistryCommand(examplePrefix))
-	cmd.AddCommand(sregcmd.NewCopyRegistryCommand(examplePrefix))
 	return cmd
 }

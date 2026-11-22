@@ -79,7 +79,6 @@ func newGenCmd() *cobra.Command {
 			return err
 		},
 	}
-	setRequireBuildahAnnotation(genCmd)
 	genArgs.RegisterFlags(genCmd.Flags())
 	genCmd.Flags().StringVarP(&out, "output", "o", "", "print output to named file")
 

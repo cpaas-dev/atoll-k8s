@@ -17,12 +17,12 @@ limitations under the License.
 package apply
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/apply/processor"
-	"github.com/cpaas-dev/atoll-k8s/internal/buildah"
 	"github.com/cpaas-dev/atoll-k8s/internal/runtime/factory"
 	"github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/iputils"
@@ -51,7 +51,7 @@ func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []strin
 		cluster.Spec.Env = append(cluster.Spec.Env, v...)
 	}
 
-	img, err := genImageInfo(imageNames[0])
+	img, err := genImageInfo(cmd.Context(), args.ClusterName, imageNames[0])
 	if err != nil {
 		return nil, err
 	}
@@ -72,18 +72,16 @@ func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []strin
 	return rt.GetRawConfig()
 }
 
-func genImageInfo(imageName string) (*v1beta1.MountImage, error) {
-	bder, err := buildah.New("")
+// genImageInfo returns the mount of the stored image imageName, without exporting it.
+func genImageInfo(ctx context.Context, clusterName, imageName string) (*v1beta1.MountImage, error) {
+	images, err := processor.NewClusterImages(ctx, clusterName)
 	if err != nil {
 		return nil, err
 	}
-	mount := &v1beta1.MountImage{
-		Name:       "default",
-		ImageName:  imageName,
-		MountPoint: "",
-	}
-	if err = processor.OCIToImageMount(bder, mount); err != nil {
+	mount, err := images.Inspect(ctx, imageName)
+	if err != nil {
 		return nil, err
 	}
-	return mount, nil
+	mount.Name = "default"
+	return &mount, nil
 }

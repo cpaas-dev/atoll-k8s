@@ -15,79 +15,58 @@
 package processor
 
 import (
+	"context"
+	"os"
 	"reflect"
 	"testing"
 
-	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	containerbuildah "go.podman.io/buildah"
-
-	"github.com/cpaas-dev/atoll-k8s/internal/buildah"
+	"github.com/cpaas-dev/atoll-k8s/internal/constants"
 	v2 "github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
 )
 
-type rootfsSelectionBuilder struct {
-	buildah.Interface
-	created []string
-}
-
-func (b *rootfsSelectionBuilder) InspectImage(
-	name string,
-	_ ...string,
-) (*buildah.InspectOutput, error) {
-	imageType := v2.RootfsImage
-	if name == "example/patch:v1" {
-		imageType = v2.PatchImage
-	}
-	return &buildah.InspectOutput{
-		OCIv1: &ociv1.Image{
-			Config: ociv1.ImageConfig{
-				Labels: map[string]string{
-					v2.ImageTypeKeys[0]:    string(imageType),
-					v2.ImageVersionKeys[0]: v2.ImageVersionList[0],
-					v2.ImageKubeVersionKey: "v1.28.15",
-				},
-			},
-		},
-	}, nil
-}
-
-func (b *rootfsSelectionBuilder) Pull(_ []string, _ ...buildah.FlagSetter) error {
-	return nil
-}
-
-func (b *rootfsSelectionBuilder) Create(
-	name, image string,
-	_ ...buildah.FlagSetter,
-) (containerbuildah.BuilderInfo, error) {
-	b.created = append(b.created, image)
-	return containerbuildah.BuilderInfo{Container: name, MountPoint: "/rootfs"}, nil
-}
-
 func TestScaleRetainsCommittedRootfsFromLegacyImageList(t *testing.T) {
+	requireRoot(t)
+	useTempRuntimeRoot(t)
+	const (
+		oldRootfs    = "registry.example.com/example/kubernetes:old"
+		patch        = "registry.example.com/example/patch:v1"
+		activeRootfs = "registry.example.com/example/kubernetes:active"
+	)
+	storeClusterImage(t, oldRootfs, v2.RootfsImage, "old")
+	storeClusterImage(t, patch, v2.PatchImage, "patch")
+	storeClusterImage(t, activeRootfs, v2.RootfsImage, "active")
 	cluster := &v2.Cluster{}
-	cluster.Spec.Image = []string{
-		"example/kubernetes:old",
-		"example/patch:v1",
-		"example/kubernetes:active",
-	}
+	cluster.Name = testCluster
+	cluster.Spec.Image = []string{oldRootfs, patch, activeRootfs}
 	cluster.Status.Mounts = []v2.MountImage{
 		{
 			Type:      v2.RootfsImage,
-			ImageName: "example/kubernetes:active",
+			ImageName: activeRootfs,
 		},
 	}
-	builder := &rootfsSelectionBuilder{}
-	if err := MountClusterImages(builder, cluster, true); err != nil {
+
+	if err := MountClusterImages(context.Background(), newTestClusterImages(t), cluster, true); err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"example/patch:v1", "example/kubernetes:active"}
-	if !reflect.DeepEqual(builder.created, want) {
-		t.Fatalf("scale mounted obsolete rootfs: %v", builder.created)
-	}
+
+	want := []string{patch, activeRootfs}
 	if !reflect.DeepEqual([]string(cluster.Spec.Image), want) {
 		t.Fatalf("obsolete image retained in inventory: %v", cluster.Spec.Image)
 	}
-	if rootfs := cluster.GetRootfsImage(); rootfs.ImageName != "example/kubernetes:active" {
-		t.Fatalf("scale changed active rootfs to %s", rootfs.ImageName)
+	if rootfs := cluster.GetRootfsImage(); rootfs.ImageName != activeRootfs || readMarker(t, *rootfs) != "active" {
+		t.Fatalf("scale changed active rootfs to %+v", rootfs)
+	}
+	exports, err := os.ReadDir(constants.ClusterMountsDir(testCluster))
+	if err != nil {
+		t.Fatalf("read mounts dir: %v", err)
+	}
+	var dirs int
+	for _, export := range exports {
+		if export.IsDir() {
+			dirs++
+		}
+	}
+	if dirs != len(want) || len(cluster.Status.Mounts) != len(want) {
+		t.Fatalf("scale exported %d images into %d mounts, want %d", dirs, len(cluster.Status.Mounts), len(want))
 	}
 }

@@ -26,7 +26,6 @@ type FakeClient struct {
 	CRI          FakeCRIInterface
 	Cluster      FakeClusterInterface
 	Cert         FakeCertInterface
-	Inspect      FakeInspectInterface
 	CmdInterface cmd.Interface
 }
 
@@ -40,7 +39,6 @@ func NewFakeClient(clusterName string) *FakeClient {
 		CRI:          newCRIClient(localCmd),
 		Cluster:      newClusterClient(localCmd, clusterName),
 		Cert:         newCertClient(localCmd, clusterName),
-		Inspect:      newInspectClient(localCmd),
 		CmdInterface: localCmd.Executor,
 	}
 }

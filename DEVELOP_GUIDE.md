@@ -36,7 +36,7 @@ Then test it locally.
 
 ## Notes about cross-platform building
 
-All the binaries except `atoll` can be built anywhere since they have `CGO_ENABLED=0`. However, `atoll` needs to support overlay driver when running some subcommands like `images`, which relies on CGO. Therefore, CGO is switched on when building `atoll`, making it impossible to build `atoll` binaries on platforms other than Linux.
+All binaries are built with `CGO_ENABLED=0`: no C compiler or system development libraries are needed, and `make build.multiarch PLATFORMS="linux_arm64 linux_amd64"` cross-compiles from any host. The binaries only run on Linux.
 
 > Both Makefile and GoReleaser in this project have this setting.
 
@@ -84,26 +84,6 @@ All the binaries except `atoll` can be built anywhere since they have `CGO_ENABL
       .
    ```
 
-### How to build atoll clusterimage
-
-1. add makefile pre-deploy
-   ```makefile
-   .PHONY: deploy
-   pre-deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-   cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-   $(KUSTOMIZE) build -e SERVICE_NAME=webhook-service -e SERVICE_NAMESPACE=system config/default  > deploy/manifests/deploy.yaml.tmpl
-   ```
-2. mkdir deploy/manifests
-3. touch deploy/Kubefile
-4. write Kubefile
-   ```dockerfile
-    FROM scratch
-    USER 65532:65532
-    COPY manifests ./manifests/xxxx
-    COPY registry ./registry
-    CMD ["kubectl apply -f manifests/xxx"]
-   ```
-
 ## Example: how to build atoll on macOS(ARM64) using multipass
 
 1. launch vm and mount atoll source code:
@@ -143,7 +123,3 @@ make build
 
 1. clone code slow, your can use ghproxy: `git clone https://ghproxy.com/https://github.com/cpaas-dev/atoll-k8s`
 2. build download package slow, you can use goproxy: `go env -w GOPROXY=https://goproxy.cn,direct && make build`
-3. Build of `atoll` or `atollctl` fails with a C compiler error.
-   For native Linux builds, the make rules now auto-detect an available host compiler from `cc`, `gcc`, or `clang`.
-   For cross-compiling CGO-enabled binaries, install the target toolchain or override it explicitly, for example:
-   `make build.multiarch BINS="atoll" CC_linux_arm64=aarch64-linux-gnu-gcc`

@@ -15,13 +15,10 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/apply"
 	"github.com/cpaas-dev/atoll-k8s/internal/apply/processor"
-	"github.com/cpaas-dev/atoll-k8s/internal/buildah"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 )
 
@@ -58,14 +55,13 @@ func newRunCmd() *cobra.Command {
 		Cluster: &apply.Cluster{},
 		SSH:     &apply.SSH{},
 	}
-	var transport string
 	var runCmd = &cobra.Command{
 		Use:     "run",
 		Short:   "Run cloud native applications with ease, with or without a existing cluster",
 		Long:    `atoll run ghcr.io/cpaas-dev/atoll/kubernetes:v1.24.0 --masters [arg] --nodes [arg]`,
 		Example: exampleRun,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			images, err := buildah.PreloadIfTarFile(args, transport)
+			images, err := importArchives(cmd.Context(), args)
 			if err != nil {
 				return err
 			}
@@ -76,21 +72,15 @@ func newRunCmd() *cobra.Command {
 			}
 			return applier.Apply()
 		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return buildah.ValidateTransport(transport)
-		},
 		PostRun: func(cmd *cobra.Command, args []string) {
 			logger.Info(getContact())
 		},
 	}
-	setRequireBuildahAnnotation(runCmd)
 	runArgs.RegisterFlags(runCmd.Flags())
 	runCmd.Flags().BoolVar(new(bool), "single", false, "run cluster in single mode")
 	if err := runCmd.Flags().MarkDeprecated("single", "it defaults to running cluster in single mode when there are no master and node"); err != nil {
 		logger.Fatal(err)
 	}
 	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false, "force override app in this cluster")
-	runCmd.Flags().StringVarP(&transport, "transport", "t", buildah.OCIArchive,
-		fmt.Sprintf("load image transport from tar archive file.(optional value: %s, %s)", buildah.OCIArchive, buildah.DockerArchive))
 	return runCmd
 }

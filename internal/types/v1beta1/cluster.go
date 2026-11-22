@@ -87,9 +87,11 @@ var (
 )
 
 type MountImage struct {
-	Name       string            `json:"name"`
-	Type       ImageType         `json:"type"`
-	ImageName  string            `json:"imageName"`
+	Name      string    `json:"name"`
+	Type      ImageType `json:"type"`
+	ImageName string    `json:"imageName"`
+	// Digest is the manifest digest of the image exported to MountPoint.
+	Digest     string            `json:"digest,omitempty"`
 	MountPoint string            `json:"mountPoint"`
 	Env        map[string]string `json:"env,omitempty"`
 	Labels     map[string]string `json:"labels,omitempty"`

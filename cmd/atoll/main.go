@@ -15,14 +15,9 @@
 package main
 
 import (
-	"go.podman.io/buildah"
-
 	"github.com/cpaas-dev/atoll-k8s/cmd/atoll/cmd"
 )
 
 func main() {
-	if buildah.InitReexec() {
-		return
-	}
 	cmd.Execute()
 }

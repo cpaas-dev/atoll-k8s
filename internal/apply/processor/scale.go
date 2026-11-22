@@ -19,7 +19,6 @@ import (
 	"fmt"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/bootstrap"
-	"github.com/cpaas-dev/atoll-k8s/internal/buildah"
 	"github.com/cpaas-dev/atoll-k8s/internal/checker"
 	"github.com/cpaas-dev/atoll-k8s/internal/clusterfile"
 	"github.com/cpaas-dev/atoll-k8s/internal/config"
@@ -29,8 +28,8 @@ import (
 	"github.com/cpaas-dev/atoll-k8s/internal/runtime"
 	"github.com/cpaas-dev/atoll-k8s/internal/runtime/factory"
 	v2 "github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
-	fileutil "github.com/cpaas-dev/atoll-k8s/internal/utils/file"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
+	"github.com/cpaas-dev/atoll-k8s/internal/utils/maps"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/yaml"
 	"golang.org/x/sync/errgroup"
 )
@@ -39,7 +38,7 @@ type ScaleProcessor struct {
 	maintenanceContext context.Context
 	ClusterFile        clusterfile.Interface
 	Runtime            runtime.Interface
-	Buildah            buildah.Interface
+	Images             *ClusterImages
 	pullImages         []string
 	MastersToJoin      []string
 	MastersToDelete    []string
@@ -206,7 +205,7 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 	}
 	if c.IsScaleUp {
 		// cluster status might be overwrite by inappropriate usage, add mounts if loss.
-		if err = MountClusterImages(c.Buildah, cluster, true); err != nil {
+		if err = MountClusterImages(c.maintenanceContext, c.Images, cluster, true); err != nil {
 			return err
 		}
 		if cluster.GetRootfsImage().KubeVersion() == "" {
@@ -225,7 +224,7 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 			}
 		}
 	}
-	if err = SyncClusterStatus(cluster, c.Buildah, false); err != nil {
+	if err = SyncClusterStatus(cluster, false); err != nil {
 		return err
 	}
 
@@ -251,16 +250,12 @@ func (c *ScaleProcessor) PreProcessImage(cluster *v2.Cluster) error {
 		if mount.Type == v2.AppImage {
 			continue
 		}
-		dirs, _ := fileutil.GetAllSubDirs(mount.MountPoint)
-		if len(dirs) == 0 {
-			clusterManifest, err := c.Buildah.Create(mount.Name, mount.ImageName)
-			if err != nil {
-				return err
-			}
-			mount.Name = clusterManifest.Container
-			mount.MountPoint = clusterManifest.MountPoint
-			cluster.Status.Mounts[i] = mount
+		exported, err := c.Images.Mount(c.maintenanceContext, mount.ImageName, &mount)
+		if err != nil {
+			return err
 		}
+		exported.Env = maps.Merge(exported.Env, mount.Env)
+		cluster.Status.Mounts[i] = exported
 	}
 
 	return nil
@@ -335,18 +330,17 @@ func NewScaleProcessor(
 	masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string,
 	contexts ...context.Context,
 ) (Interface, error) {
-	bder, err := buildah.New(name)
+	ctx := context.Background()
+	if len(contexts) > 0 {
+		ctx = contexts[0]
+	}
+	clusterImages, err := NewClusterImages(ctx, name)
 	if err != nil {
 		return nil, err
 	}
 	gs, err := guest.NewGuestManager()
 	if err != nil {
 		return nil, err
-	}
-
-	ctx := context.Background()
-	if len(contexts) > 0 {
-		ctx = contexts[0]
 	}
 	return &ScaleProcessor{
 		maintenanceContext: ctx,
@@ -355,7 +349,7 @@ func NewScaleProcessor(
 		NodesToDelete:      nodeToDelete,
 		NodesToJoin:        nodeToJoin,
 		ClusterFile:        clusterFile,
-		Buildah:            bder,
+		Images:             clusterImages,
 		pullImages:         images,
 		IsScaleUp:          len(masterToJoin) > 0 || len(nodeToJoin) > 0,
 		Guest:              gs,

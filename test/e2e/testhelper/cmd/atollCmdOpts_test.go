@@ -107,90 +107,6 @@ func TestArgs_appendFlagsWithValues(t *testing.T) {
 	}
 }
 
-func TestBuildOptions_Args(t *testing.T) {
-	type fields struct {
-		AllPlatforms       bool
-		Authfile           string
-		BuildContext       []string
-		BuildArg           []string
-		CertDir            string
-		Compress           bool
-		Creds              string
-		DisableCompression bool
-		DNS                string
-		DNSOption          []string
-		DNSSearch          []string
-		Env                []string
-		File               string
-		ForceRm            bool
-		Format             string
-		From               string
-		HTTPProxy          bool
-		Ignorefile         string
-		Jobs               int
-		Label              []string
-		Manifest           string
-		MaxPullProcs       int
-		All                bool
-		Platform           string
-		Pull               string
-		Quiet              bool
-		Retry              int
-		RetryDelay         string
-		Rm                 bool
-		SaveImage          bool
-		ShmSize            string
-		Tag                string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   []string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			bo := &BuildOptions{
-				AllPlatforms:       tt.fields.AllPlatforms,
-				Authfile:           tt.fields.Authfile,
-				BuildContext:       tt.fields.BuildContext,
-				BuildArg:           tt.fields.BuildArg,
-				CertDir:            tt.fields.CertDir,
-				Creds:              tt.fields.Creds,
-				DisableCompression: tt.fields.DisableCompression,
-				DNS:                tt.fields.DNS,
-				DNSOption:          tt.fields.DNSOption,
-				DNSSearch:          tt.fields.DNSSearch,
-				Env:                tt.fields.Env,
-				File:               tt.fields.File,
-				ForceRm:            tt.fields.ForceRm,
-				Format:             tt.fields.Format,
-				From:               tt.fields.From,
-				HTTPProxy:          tt.fields.HTTPProxy,
-				Ignorefile:         tt.fields.Ignorefile,
-				Jobs:               tt.fields.Jobs,
-				Label:              tt.fields.Label,
-				Manifest:           tt.fields.Manifest,
-				MaxPullProcs:       tt.fields.MaxPullProcs,
-				All:                tt.fields.All,
-				Platform:           tt.fields.Platform,
-				Pull:               tt.fields.Pull,
-				Quiet:              tt.fields.Quiet,
-				Retry:              tt.fields.Retry,
-				RetryDelay:         tt.fields.RetryDelay,
-				Rm:                 tt.fields.Rm,
-				SaveImage:          tt.fields.SaveImage,
-				ShmSize:            tt.fields.ShmSize,
-				Tag:                tt.fields.Tag,
-			}
-			if got := bo.Args(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Args() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestCertOptions_Args(t *testing.T) {
 	type fields struct {
 		Cluster string
@@ -208,33 +124,6 @@ func TestCertOptions_Args(t *testing.T) {
 			co := &CertOptions{
 				Cluster: tt.fields.Cluster,
 				AltName: tt.fields.AltName,
-			}
-			if got := co.Args(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Args() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestCreateOptions_Args(t *testing.T) {
-	type fields struct {
-		Cluster  string
-		Platform string
-		Short    bool
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   []string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			co := &CreateOptions{
-				Cluster:  tt.fields.Cluster,
-				Platform: tt.fields.Platform,
-				Short:    tt.fields.Short,
 			}
 			if got := co.Args(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Args() = %v, want %v", got, tt.want)

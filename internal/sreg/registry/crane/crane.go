@@ -46,18 +46,6 @@ func GetRemoteOptions(ctx context.Context, authConfig map[string]registry.AuthCo
 
 func GetImageManifestFromAuth(image string, authConfig map[string]registry.AuthConfig) (newImage string, data []byte, cfg *registry.AuthConfig, err error) {
 	newImage = image
-	if authConfig == nil {
-		authConfig, err = GetAuthInfo(nil)
-		if err != nil {
-			return newImage, nil, nil, err
-		}
-		for domain, c := range authConfig {
-			if NormalizeRegistry(domain) != domain {
-				authConfig[NormalizeRegistry(domain)] = c
-				delete(authConfig, domain)
-			}
-		}
-	}
 	craneOptsBase := GetCraneOptions(authConfig)
 	var ref name2.Reference
 	var repo string

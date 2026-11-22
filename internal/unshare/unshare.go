@@ -19,17 +19,16 @@ package unshare
 import (
 	"os"
 	"strings"
-
-	"go.podman.io/storage/pkg/unshare"
 )
 
 const (
 	DisableAutoRootless = "DISABLE_AUTO_ROOTLESS"
 )
 
+// IsRootless reports whether atoll runs without root, unless DISABLE_AUTO_ROOTLESS=true.
 func IsRootless() bool {
 	if v, ok := os.LookupEnv(DisableAutoRootless); ok && strings.ToLower(v) == "true" {
 		return false
 	}
-	return unshare.IsRootless()
+	return os.Geteuid() != 0
 }

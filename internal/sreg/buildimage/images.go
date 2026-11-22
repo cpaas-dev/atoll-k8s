@@ -16,52 +16,14 @@ package buildimage
 
 import (
 	"fmt"
-	"io/fs"
-	"path"
-	"path/filepath"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	"github.com/cpaas-dev/atoll-k8s/internal/sreg/buildimage/manifests"
-	"github.com/cpaas-dev/atoll-k8s/internal/sreg/utils/tmpl"
-	"github.com/cpaas-dev/atoll-k8s/internal/sreg/utils/yaml"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/file"
 	"github.com/cpaas-dev/atoll-k8s/internal/utils/logger"
 	strutil "github.com/cpaas-dev/atoll-k8s/internal/utils/strings"
 )
-
-func ParseYamlImages(dir string) ([]string, error) {
-	if !file.IsExist(dir) {
-		logger.Debug("path %s is not exists,skip", dir)
-		return nil, nil
-	}
-	list := sets.NewString()
-	imageSearcher, err := manifests.NewManifests()
-	if err != nil {
-		return nil, err
-	}
-
-	err = filepath.Walk(dir, func(path string, f fs.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if f.IsDir() || (!yaml.Matcher(f.Name()) && !tmpl.Matcher(f.Name())) {
-			return nil
-		}
-		ima, err := imageSearcher.ListImages(path)
-		if err != nil {
-			return err
-		}
-		list = list.Insert(ima...)
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-	return formalizeImages(list.List()), nil
-}
 
 func formalizeImages(images []string) (res []string) {
 	for i := range images {
@@ -93,45 +55,4 @@ func ParseShimImages(dir string) ([]string, error) {
 	}
 	imageList := formalizeImages(list.List())
 	return imageList, nil
-}
-
-func List(dir string) ([]string, error) {
-	wrapGetImageErr := func(err error, s string) error {
-		return fmt.Errorf("failed to get images in %s: %w", s, err)
-	}
-	chrtDir := path.Join(dir, ChartsDirName)
-	chrtImgs, err := ParseChartImages(chrtDir)
-	if err != nil {
-		return nil, wrapGetImageErr(err, chrtDir)
-	}
-
-	yamlDir := path.Join(dir, ManifestsDirName)
-	yamlImgs, err := ParseYamlImages(yamlDir)
-	if err != nil {
-		return nil, wrapGetImageErr(err, yamlDir)
-	}
-	shimDir := path.Join(dir, ImagesDirName, ImageShimDirName)
-	shimImgs, err := ParseShimImages(shimDir)
-	if err != nil {
-		return nil, wrapGetImageErr(err, shimDir)
-	}
-	list := sets.NewString(chrtImgs...)
-	list = list.Insert(yamlImgs...)
-	list = list.Insert(shimImgs...)
-	return list.List(), nil
-}
-
-func Filter(images []string, ignoreFile string) ([]string, error) {
-	ignore, err := file.ReadLines(ignoreFile)
-	if err != nil {
-		return nil, err
-	}
-	ignoreSet := sets.NewString(ignore...)
-	var res []string
-	for _, img := range images {
-		if !ignoreSet.Has(img) {
-			res = append(res, img)
-		}
-	}
-	return res, nil
 }

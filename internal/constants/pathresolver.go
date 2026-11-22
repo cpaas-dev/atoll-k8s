@@ -20,11 +20,10 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"os/user"
 	"path"
 	"path/filepath"
 	"strings"
-
-	"go.podman.io/storage/pkg/homedir"
 )
 
 var (
@@ -48,8 +47,15 @@ const (
 	StaticsDirName              = "statics"
 )
 
+// GetHomeDir returns $HOME, or the home directory of the current user when HOME is unset.
 func GetHomeDir() string {
-	return homedir.Get()
+	if home := os.Getenv("HOME"); home != "" {
+		return home
+	}
+	if current, err := user.Current(); err == nil {
+		return current.HomeDir
+	}
+	return ""
 }
 
 func WorkDir() string {
@@ -60,6 +66,11 @@ func ClusterDir(clusterName string) string {
 	return filepath.Join(DefaultRuntimeRootDir, clusterName)
 }
 
+// ClusterMountsDir returns the dir holding the rootfs exported from each image of a cluster.
+func ClusterMountsDir(clusterName string) string {
+	return filepath.Join(DefaultRuntimeRootDir, clusterName, "mounts")
+}
+
 func Clusterfile(clusterName string) string {
 	return filepath.Join(DefaultRuntimeRootDir, clusterName, DefaultClusterFileName)
 }
@@ -68,11 +79,17 @@ func GetRuntimeRootDir(name string) string {
 	if v, ok := os.LookupEnv(strings.ToUpper(name) + "_RUNTIME_ROOT"); ok {
 		return v
 	}
-	return path.Join(homedir.Get(), fmt.Sprintf(".%s", name))
+	return path.Join(GetHomeDir(), fmt.Sprintf(".%s", name))
 }
 
 func LogPath() string {
 	return filepath.Join(DefaultRuntimeRootDir, "logs")
+}
+
+// ImageStorePath returns the local image store of the init node: an OCI image layout
+// holding the pulled and imported cluster images.
+func ImageStorePath() string {
+	return filepath.Join(DefaultRuntimeRootDir, "images")
 }
 
 func DataPath() string {
