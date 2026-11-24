@@ -71,15 +71,6 @@ var _ = Describe("E2E_atoll_multi_node_test", func() {
 				utils.CheckErr(applier.RemoteAtollCmd.Run(runOpts))
 			})
 
-			By("test run app image", func() {
-				runAppOpts := &cmd2.RunOptions{
-					Images:  applier.RunImages,
-					Cluster: applier.ClusterName,
-				}
-				logger.Info("runAppOpts: %#+v", runAppOpts.Args())
-				utils.CheckErr(applier.RemoteAtollCmd.Run(runAppOpts))
-			})
-
 			applier.FetchRemoteKubeConfig()
 			//check result
 			applier.CheckNodeNum(2)

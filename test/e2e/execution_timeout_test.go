@@ -50,7 +50,7 @@ var _ = Describe("E2E_atoll_execution_timeout_test", func() {
 
 			By("running cluster with extended execution timeout from env var")
 			// Use standard cluster images to test timeout functionality
-			images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
+			images := []string{"labring/kubernetes:v1.25.0"}
 			err = fakeClient.Cluster.Run(images...)
 			utils.CheckErr(err, fmt.Sprintf("failed to run cluster with custom timeout: %v", err))
 
@@ -60,7 +60,7 @@ var _ = Describe("E2E_atoll_execution_timeout_test", func() {
 
 		It("atoll run should use default 300s when no env var is set", func() {
 			By("running cluster with default timeout (no env var set)")
-			images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
+			images := []string{"labring/kubernetes:v1.25.0"}
 			err = fakeClient.Cluster.Run(images...)
 			utils.CheckErr(err, fmt.Sprintf("failed to run cluster: %v", err))
 
@@ -72,7 +72,7 @@ var _ = Describe("E2E_atoll_execution_timeout_test", func() {
 			os.Setenv("ATOLL_EXECUTION_TIMEOUT", "0") // 0 means unlimited
 
 			By("running cluster with unlimited timeout")
-			images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
+			images := []string{"labring/kubernetes:v1.25.0"}
 			err = fakeClient.Cluster.Run(images...)
 			utils.CheckErr(err, fmt.Sprintf("failed to run cluster with unlimited timeout: %v", err))
 
@@ -122,7 +122,7 @@ var _ = Describe("E2E_atoll_execution_timeout_test", func() {
 			os.Setenv("ATOLL_EXECUTION_TIMEOUT", "600s")
 
 			By("running cluster with apply using custom timeout from env")
-			images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
+			images := []string{"labring/kubernetes:v1.25.0"}
 			err = fakeClient.Cluster.Run(images...)
 			utils.CheckErr(err, fmt.Sprintf("failed to run cluster with custom timeout: %v", err))
 

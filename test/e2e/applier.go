@@ -43,7 +43,6 @@ type Applier struct {
 	RemoteAtollCmd *cmd2.AtollCmd
 	k8sClient      kube.K8s
 	Infra          *terraform.InfraDetail
-	RunImages      []string
 	ClusterName    string
 	ImageName      string
 	TestDir        string
@@ -66,11 +65,7 @@ func NewApplier(infra *terraform.InfraDetail) (*Applier, error) {
 		LocalCmd:       cmd2.LocalCmd{},
 		ClusterName:    settings.GetEnvWithDefault(settings.TestClusterName, "default"),
 		ImageName:      os.Getenv(settings.TestImageName),
-		RunImages:      strings.Split(os.Getenv(settings.TestRunImages), ","),
 		TestDir:        settings.DefaultTestDir,
-	}
-	if len(a.RunImages) == 0 {
-		a.RunImages = []string{settings.HelmImageName, settings.CalicoImageName}
 	}
 	if err := a.WaitSSHReady(); err != nil {
 		return nil, fmt.Errorf("wait for ssh ready: %v", err)

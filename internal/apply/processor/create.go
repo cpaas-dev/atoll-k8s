@@ -98,7 +98,7 @@ func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 }
 
 func (c *CreateProcessor) preProcess(cluster *v2.Cluster) error {
-	if err := MountClusterImages(c.maintenanceContext, c.Images, cluster, false); err != nil {
+	if err := MountClusterImages(c.maintenanceContext, c.Images, cluster); err != nil {
 		return err
 	}
 	// env in cluster.spec will be merged into every mounts object

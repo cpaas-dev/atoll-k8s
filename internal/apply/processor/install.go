@@ -73,7 +73,7 @@ func (c *InstallProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, err
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
 		c.SyncStatusAndCheck,
-		c.ConfirmOverrideApps,
+		c.ConfirmOverrideImages,
 		c.PreProcess,
 		c.RunConfig,
 		c.MountRootfs,
@@ -106,15 +106,15 @@ func (c *InstallProcessor) SyncStatusAndCheck(_ *v2.Cluster) error {
 	return nil
 }
 
-func (c *InstallProcessor) ConfirmOverrideApps(_ *v2.Cluster) error {
-	logger.Info("Executing ConfirmOverrideApps Pipeline in InstallProcessor")
+func (c *InstallProcessor) ConfirmOverrideImages(_ *v2.Cluster) error {
+	logger.Info("Executing ConfirmOverrideImages Pipeline in InstallProcessor")
 
 	if ForceOverride || len(c.imagesToOverride) == 0 {
 		return nil
 	}
 
-	prompt := fmt.Sprintf("are you sure to override these following apps? \n%s\t", strings.Join(c.imagesToOverride, "\n"))
-	cancelledMsg := "you have canceled to override these apps"
+	prompt := fmt.Sprintf("are you sure to override these following images? \n%s\t", strings.Join(c.imagesToOverride, "\n"))
+	cancelledMsg := "you have canceled to override these images"
 	pass, err := confirm.Confirm(prompt, cancelledMsg)
 	if err != nil {
 		return err
@@ -159,7 +159,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 			if !ForceOverride {
 				continue
 			}
-			logger.Debug("trying to override app %s", img)
+			logger.Debug("trying to override image %s", img)
 			if err := c.Images.Remove(*mount); err != nil {
 				return err
 			}
@@ -215,9 +215,9 @@ func (c *InstallProcessor) UpgradeIfNeed(cluster *v2.Cluster) error {
 
 func (c *InstallProcessor) PostProcess(*v2.Cluster) error {
 	if len(c.NewMounts) == 0 {
-		logger.Info("no apps has been changed")
+		logger.Info("no images have been changed")
 	} else {
-		logger.Info("succeeded install app in this cluster")
+		logger.Info("succeeded in applying images to this cluster")
 	}
 	return nil
 }

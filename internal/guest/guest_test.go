@@ -27,8 +27,8 @@ import (
 )
 
 func TestDefault_getGuestCmd(t *testing.T) {
-	shell := func(cName, containerName, cmd string) string {
-		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetAppWorkDir(cName, containerName), cmd)
+	shell := func(cName, cmd string) string {
+		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetRootWorkDir(cName), cmd)
 	}
 	type fields struct {
 	}
@@ -57,7 +57,7 @@ func TestDefault_getGuestCmd(t *testing.T) {
 					},
 				},
 			},
-			want: []string{shell("", "", "IFACE=cccc bash ovn-install.sh")},
+			want: []string{shell("", "IFACE=cccc bash ovn-install.sh")},
 		},
 
 		{
@@ -74,7 +74,7 @@ func TestDefault_getGuestCmd(t *testing.T) {
 					},
 				},
 			},
-			want: []string{shell("", "", "IFACE=\"eth.*|en.*\" bash ovn-install.sh")},
+			want: []string{shell("", "IFACE=\"eth.*|en.*\" bash ovn-install.sh")},
 		},
 		{
 			name:   "default-env-override",
@@ -90,7 +90,7 @@ func TestDefault_getGuestCmd(t *testing.T) {
 					},
 				},
 			},
-			want: []string{shell("", "", "IFACE=\"default\" bash ovn-install.sh")},
+			want: []string{shell("", "IFACE=\"default\" bash ovn-install.sh")},
 		},
 		{
 			name:   "default-cmd-override",
@@ -106,7 +106,7 @@ func TestDefault_getGuestCmd(t *testing.T) {
 					},
 				},
 			},
-			want: []string{shell("", "", "IFACE=\"default\" sh ovn-install.sh")},
+			want: []string{shell("", "IFACE=\"default\" sh ovn-install.sh")},
 		},
 		{
 			name:   "default-entrypoint-cmd-override",
@@ -122,7 +122,7 @@ func TestDefault_getGuestCmd(t *testing.T) {
 					},
 				},
 			},
-			want: []string{shell("", "", "AA=default"), shell("", "", "IFACE=\"default\" sh ovn-install.sh")},
+			want: []string{shell("", "AA=default"), shell("", "IFACE=\"default\" sh ovn-install.sh")},
 		},
 	}
 	for _, tt := range tests {
@@ -137,8 +137,8 @@ func TestDefault_getGuestCmd(t *testing.T) {
 }
 
 func TestDefault_getGuestCmd_dollarBraceVariable(t *testing.T) {
-	shell := func(cName, containerName, cmd string) string {
-		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetAppWorkDir(cName, containerName), cmd)
+	shell := func(cName, cmd string) string {
+		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetRootWorkDir(cName), cmd)
 	}
 	type fields struct {
 	}
@@ -167,7 +167,7 @@ func TestDefault_getGuestCmd_dollarBraceVariable(t *testing.T) {
 					},
 				},
 			},
-			want: []string{shell("", "", "IFACE=cccc bash ovn-install.sh")},
+			want: []string{shell("", "IFACE=cccc bash ovn-install.sh")},
 		},
 
 		{
@@ -184,7 +184,7 @@ func TestDefault_getGuestCmd_dollarBraceVariable(t *testing.T) {
 					},
 				},
 			},
-			want: []string{shell("", "", "IFACE=\"eth.*|en.*\" bash ovn-install.sh")},
+			want: []string{shell("", "IFACE=\"eth.*|en.*\" bash ovn-install.sh")},
 		},
 		{
 			name:   "default-env-override",
@@ -200,7 +200,7 @@ func TestDefault_getGuestCmd_dollarBraceVariable(t *testing.T) {
 					},
 				},
 			},
-			want: []string{shell("", "", "IFACE=\"default\" bash ovn-install.sh")},
+			want: []string{shell("", "IFACE=\"default\" bash ovn-install.sh")},
 		},
 		{
 			name:   "default-cmd-override",
@@ -216,7 +216,7 @@ func TestDefault_getGuestCmd_dollarBraceVariable(t *testing.T) {
 					},
 				},
 			},
-			want: []string{shell("", "", "IFACE=\"default\" sh ovn-install.sh")},
+			want: []string{shell("", "IFACE=\"default\" sh ovn-install.sh")},
 		},
 		{
 			name:   "default-entrypoint-cmd-override",
@@ -232,7 +232,7 @@ func TestDefault_getGuestCmd_dollarBraceVariable(t *testing.T) {
 					},
 				},
 			},
-			want: []string{shell("", "", "AA=default"), shell("", "", "IFACE=\"default\" sh ovn-install.sh")},
+			want: []string{shell("", "AA=default"), shell("", "IFACE=\"default\" sh ovn-install.sh")},
 		},
 	}
 	for _, tt := range tests {
@@ -247,8 +247,8 @@ func TestDefault_getGuestCmd_dollarBraceVariable(t *testing.T) {
 }
 
 func TestDefault_getGuestCmd_dollarVariable(t *testing.T) {
-	shell := func(cName, containerName, cmd string) string {
-		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetAppWorkDir(cName, containerName), cmd)
+	shell := func(cName, cmd string) string {
+		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetRootWorkDir(cName), cmd)
 	}
 	type fields struct {
 	}
@@ -277,7 +277,7 @@ func TestDefault_getGuestCmd_dollarVariable(t *testing.T) {
 					},
 				},
 			},
-			want: []string{shell("", "", "IFACE=cccc bash ovn-install.sh")},
+			want: []string{shell("", "IFACE=cccc bash ovn-install.sh")},
 		},
 
 		{
@@ -294,7 +294,7 @@ func TestDefault_getGuestCmd_dollarVariable(t *testing.T) {
 					},
 				},
 			},
-			want: []string{shell("", "", "IFACE=\"eth.*|en.*\" bash ovn-install.sh")},
+			want: []string{shell("", "IFACE=\"eth.*|en.*\" bash ovn-install.sh")},
 		},
 		{
 			name:   "default-env-override",
@@ -310,7 +310,7 @@ func TestDefault_getGuestCmd_dollarVariable(t *testing.T) {
 					},
 				},
 			},
-			want: []string{shell("", "", "IFACE=\"default\" bash ovn-install.sh")},
+			want: []string{shell("", "IFACE=\"default\" bash ovn-install.sh")},
 		},
 		{
 			name:   "default-cmd-override",
@@ -326,7 +326,7 @@ func TestDefault_getGuestCmd_dollarVariable(t *testing.T) {
 					},
 				},
 			},
-			want: []string{shell("", "", "IFACE=\"default\" sh ovn-install.sh")},
+			want: []string{shell("", "IFACE=\"default\" sh ovn-install.sh")},
 		},
 		{
 			name:   "default-entrypoint-cmd-override",
@@ -342,7 +342,7 @@ func TestDefault_getGuestCmd_dollarVariable(t *testing.T) {
 					},
 				},
 			},
-			want: []string{shell("", "", "AA=default"), shell("", "", "IFACE=\"default\" sh ovn-install.sh")},
+			want: []string{shell("", "AA=default"), shell("", "IFACE=\"default\" sh ovn-install.sh")},
 		},
 	}
 	for _, tt := range tests {

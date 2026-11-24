@@ -48,10 +48,12 @@ type RegistryConfig struct {
 	Password string `json:"password,omitempty"`
 	Data     string `json:"data,omitempty"`
 }
+
+// ImageType is the type of a cluster image, read from its type label. Only rootfs and
+// patch images are supported.
 type ImageType string
 
 const (
-	AppImage                 ImageType = "application"
 	RootfsImage              ImageType = "rootfs"
 	PatchImage               ImageType = "patch"
 	ImageKubeVersionKey                = "version"
@@ -104,10 +106,6 @@ func (m *MountImage) KubeVersion() string {
 		return ""
 	}
 	return m.Labels[ImageKubeVersionKey]
-}
-
-func (m *MountImage) IsApplication() bool {
-	return m.Type == "" || m.Type == AppImage
 }
 
 func (m *MountImage) IsRootFs() bool {

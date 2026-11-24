@@ -129,15 +129,27 @@ func TestClusterImagesNameMissingImagePull(t *testing.T) {
 	}
 }
 
+func TestClusterImagesRejectApplicationImage(t *testing.T) {
+	useTempRuntimeRoot(t)
+	const ref = "registry.example.com/cluster/helm:v1"
+	storeClusterImage(t, ref, v2.ImageType("application"), "app")
+
+	_, err := newTestClusterImages(t).Inspect(context.Background(), ref)
+
+	if err == nil || !strings.Contains(err.Error(), `type "application"`) {
+		t.Fatalf("inspect error = %v, want an unsupported type error", err)
+	}
+}
+
 func TestSyncClusterStatusRestoresRecordedMounts(t *testing.T) {
 	requireRoot(t)
 	useTempRuntimeRoot(t)
 	ctx := context.Background()
-	const rootfs, app = "registry.example.com/cluster/kubernetes:v1", "registry.example.com/cluster/helm:v1"
+	const rootfs, patch = "registry.example.com/cluster/kubernetes:v1", "registry.example.com/cluster/patch:v1"
 	storeClusterImage(t, rootfs, v2.RootfsImage, "rootfs")
-	storeClusterImage(t, app, v2.AppImage, "app")
+	storeClusterImage(t, patch, v2.PatchImage, "patch")
 	images := newTestClusterImages(t)
-	for _, ref := range []string{rootfs, app} {
+	for _, ref := range []string{rootfs, patch} {
 		if _, err := images.Mount(ctx, ref, nil); err != nil {
 			t.Fatalf("mount %s: %v", ref, err)
 		}
@@ -162,7 +174,7 @@ func TestSyncClusterStatusRestoresRecordedMounts(t *testing.T) {
 		names = append(names, mount.ImageName)
 	}
 	slices.Sort(names)
-	if !slices.Equal(names, []string{app, rootfs}) {
+	if !slices.Equal(names, []string{rootfs, patch}) {
 		t.Fatalf("reset restored %v, want every recorded mount", names)
 	}
 }

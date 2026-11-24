@@ -95,21 +95,10 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 	return todoList, nil
 }
 
-func (c *ScaleProcessor) skipAppMounts(allMount []v2.MountImage) []v2.MountImage {
-	mounts := make([]v2.MountImage, 0)
-	for _, m := range allMount {
-		if !m.IsApplication() {
-			mount := m.DeepCopy()
-			mounts = append(mounts, *mount)
-		}
-	}
-	return mounts
-}
-
 func (c *ScaleProcessor) RunGuest(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline RunGuest in ScaleProcessor.")
 	hosts := append(c.MastersToJoin, c.NodesToJoin...)
-	err := c.Guest.Apply(cluster, c.skipAppMounts(cluster.Status.Mounts), hosts)
+	err := c.Guest.Apply(cluster, cluster.Status.Mounts, hosts)
 	if err != nil {
 		return fmt.Errorf("%s: %w", RunGuestFailed, err)
 	}
@@ -204,8 +193,11 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 		return err
 	}
 	if c.IsScaleUp {
+		if err = DropObsoleteRootfs(c.maintenanceContext, c.Images, cluster); err != nil {
+			return err
+		}
 		// cluster status might be overwrite by inappropriate usage, add mounts if loss.
-		if err = MountClusterImages(c.maintenanceContext, c.Images, cluster, true); err != nil {
+		if err = MountClusterImages(c.maintenanceContext, c.Images, cluster); err != nil {
 			return err
 		}
 		if cluster.GetRootfsImage().KubeVersion() == "" {
@@ -247,9 +239,6 @@ func (c *ScaleProcessor) PreProcessImage(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline PreProcessImage in ScaleProcessor.")
 
 	for i, mount := range cluster.Status.Mounts {
-		if mount.Type == v2.AppImage {
-			continue
-		}
 		exported, err := c.Images.Mount(c.maintenanceContext, mount.ImageName, &mount)
 		if err != nil {
 			return err
@@ -281,10 +270,7 @@ func (c *ScaleProcessor) RunConfig(cluster *v2.Cluster) error {
 func (c *ScaleProcessor) MountRootfs(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline MountRootfs in ScaleProcessor.")
 	hosts := append(c.MastersToJoin, c.NodesToJoin...)
-	// since app type images are only sent to the first master, in
-	// cluster scaling scenario we don't need to sent app images repeatedly.
-	// so filter out rootfs/patch type
-	mounts, err := sortAndFilterNoneApplicationMounts(cluster)
+	mounts, err := mountsInImageOrder(cluster)
 	if err != nil {
 		return err
 	}
@@ -295,16 +281,15 @@ func (c *ScaleProcessor) MountRootfs(cluster *v2.Cluster) error {
 	return fs.MountRootfs(cluster, hosts)
 }
 
-func sortAndFilterNoneApplicationMounts(cluster *v2.Cluster) ([]v2.MountImage, error) {
+// mountsInImageOrder returns the mounts of cluster.Spec.Image in the order of the images.
+func mountsInImageOrder(cluster *v2.Cluster) ([]v2.MountImage, error) {
 	ret := make([]v2.MountImage, 0)
 	for _, img := range cluster.Spec.Image {
 		idx := getIndexOfContainerInMounts(cluster.Status.Mounts, img)
 		if idx == -1 {
 			return ret, fmt.Errorf("image %s not mount", img)
 		}
-		if cluster.Status.Mounts[idx].Type != v2.AppImage {
-			ret = append(ret, cluster.Status.Mounts[idx])
-		}
+		ret = append(ret, cluster.Status.Mounts[idx])
 	}
 	return ret, nil
 }

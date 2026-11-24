@@ -16,7 +16,6 @@ package processor
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"slices"
@@ -94,46 +93,25 @@ func getIndexOfContainerInMounts(mounts []v2.MountImage, imageName string) int {
 }
 
 // MountClusterImages exports the rootfs of every image in cluster.Spec.Image that is not
-// exported yet and records it in cluster.Status.Mounts. With skipApp, application images
-// and images missing from the local store are skipped.
-func MountClusterImages(ctx context.Context, images *ClusterImages, cluster *v2.Cluster, skipApp bool) error {
+// exported yet and records it in cluster.Status.Mounts. The images must include a rootfs
+// image.
+func MountClusterImages(ctx context.Context, images *ClusterImages, cluster *v2.Cluster) error {
 	if cluster.Status.Mounts == nil {
 		cluster.Status.Mounts = make([]v2.MountImage, 0)
 	}
 	var hasRootfsType bool
-	activeRootfs := cluster.GetRootfsImage()
-	var obsoleteRootfs []string
 	for _, img := range cluster.Spec.Image {
 		info, err := images.Inspect(ctx, img)
 		if err != nil {
-			if skipApp {
-				logger.Warn("skip image %s: %v", img, err)
-				continue
-			}
 			return err
 		}
-		var imageType string
-		if info.Labels != nil {
-			imageType = maps.GetFromKeys(info.Labels, v2.ImageTypeKeys...)
+		if info.IsRootFs() {
 			imageVersion := maps.GetFromKeys(info.Labels, v2.ImageVersionKeys...)
-			if imageType == string(v2.RootfsImage) {
-				// Older inventories retained replaced rootfs names in spec.image.
-				// Scaling must distribute the committed rootfs, including when an
-				// old image happens to be inspected before the active image.
-				if skipApp && activeRootfs != nil && activeRootfs.ImageName != img {
-					obsoleteRootfs = append(obsoleteRootfs, img)
-					continue
-				}
-				if !slices.Contains(v2.ImageVersionList, imageVersion) {
-					return fmt.Errorf("can't apply rootfs type images and version %s not %+v",
-						imageVersion, v2.ImageVersionList)
-				}
-				hasRootfsType = true
+			if !slices.Contains(v2.ImageVersionList, imageVersion) {
+				return fmt.Errorf("can't apply rootfs type images and version %s not %+v",
+					imageVersion, v2.ImageVersionList)
 			}
-		}
-		if (imageType == "" || imageType == string(v2.AppImage)) && skipApp {
-			// then it's an application type image
-			continue
+			hasRootfsType = true
 		}
 
 		idx := getIndexOfContainerInMounts(cluster.Status.Mounts, img)
@@ -154,18 +132,43 @@ func MountClusterImages(ctx context.Context, images *ClusterImages, cluster *v2.
 	}
 
 	if !hasRootfsType {
-		return errors.New("can't apply application type images only since RootFS type image is not applied yet")
+		return fmt.Errorf("cluster images %v include no %s type image", cluster.Spec.Image, v2.RootfsImage)
+	}
+	return nil
+}
+
+// DropObsoleteRootfs removes from cluster.Spec.Image, and from cluster.Status.Mounts with
+// their exports, the rootfs images other than the active one in cluster.Status.Mounts.
+// Older inventories retained replaced rootfs names in spec.image; scaling must distribute
+// the committed rootfs, including when an old image is listed before the active image.
+func DropObsoleteRootfs(ctx context.Context, images *ClusterImages, cluster *v2.Cluster) error {
+	active := cluster.GetRootfsImage()
+	if active == nil {
+		return nil
+	}
+	var obsolete []string
+	for _, img := range cluster.Spec.Image {
+		if img == active.ImageName {
+			continue
+		}
+		info, err := images.Inspect(ctx, img)
+		if err != nil {
+			return err
+		}
+		if info.IsRootFs() {
+			obsolete = append(obsolete, img)
+		}
 	}
 	kept := cluster.Spec.Image[:0]
 	for _, image := range cluster.Spec.Image {
-		if !slices.Contains(obsoleteRootfs, image) {
+		if !slices.Contains(obsolete, image) {
 			kept = append(kept, image)
 		}
 	}
 	cluster.Spec.Image = kept
 	mounts := cluster.Status.Mounts[:0]
 	for _, mount := range cluster.Status.Mounts {
-		if !slices.Contains(obsoleteRootfs, mount.ImageName) {
+		if !slices.Contains(obsolete, mount.ImageName) {
 			mounts = append(mounts, mount)
 			continue
 		}

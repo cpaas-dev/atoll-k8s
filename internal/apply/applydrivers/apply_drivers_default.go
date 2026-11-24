@@ -260,7 +260,7 @@ func (c *Applier) updateStatus(clusterErr, appErr error) {
 func (c *Applier) reconcileCluster() (clusterErr, appErr error) {
 	if len(c.RunNewImages) != 0 {
 		logger.Debug("run new images: %+v", c.RunNewImages)
-		if appErr = c.installApp(c.RunNewImages); appErr != nil {
+		if appErr = c.installImages(c.RunNewImages); appErr != nil {
 			return nil, appErr
 		}
 	}
@@ -300,8 +300,8 @@ func (c *Applier) initCluster() error {
 	return nil
 }
 
-func (c *Applier) installApp(images []string) error {
-	logger.Info("start to install app in this cluster")
+func (c *Applier) installImages(images []string) error {
+	logger.Info("start to apply images to this cluster")
 	err := c.ClusterFile.Process()
 	if err != nil {
 		return err

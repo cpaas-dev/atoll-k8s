@@ -29,10 +29,10 @@ import (
 
 var exampleGen = `
 generate a single-node cluster using the default settings:
-    atoll gen ghcr.io/cpaas-dev/atoll/kubernetes:v1.25.0 ghcr.io/cpaas-dev/atoll/helm:v3.8.2 ghcr.io/cpaas-dev/atoll/calico:v3.24.1
+    atoll gen ghcr.io/cpaas-dev/atoll/kubernetes:v1.25.0
 
-generate a cluster with multi images, specify masters and nodes:
-    atoll gen ghcr.io/cpaas-dev/atoll/kubernetes:v1.25.0 ghcr.io/cpaas-dev/atoll/helm:v3.8.2 ghcr.io/cpaas-dev/atoll/calico:v3.24.1 \
+generate a cluster, specify masters and nodes:
+    atoll gen ghcr.io/cpaas-dev/atoll/kubernetes:v1.25.0 \
         --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
         --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
 

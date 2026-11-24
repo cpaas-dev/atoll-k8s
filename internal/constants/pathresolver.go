@@ -96,10 +96,6 @@ func DataPath() string {
 	return filepath.Join(DefaultClusterRootFsDir, "data")
 }
 
-func GetAppWorkDir(clusterName, applicationName string) string {
-	return filepath.Join(DataPath(), clusterName, "applications", applicationName, "workdir")
-}
-
 func GetRootWorkDir(clusterName string) string {
 	return filepath.Join(DataPath(), clusterName, "rootfs")
 }

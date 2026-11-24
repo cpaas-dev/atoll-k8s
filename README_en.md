@@ -10,7 +10,7 @@
 
 ## Overview
 
-Atoll-K8s is a standalone, zero-dependency binary for managing the full lifecycle of a Kubernetes cluster: installation, scaling, certificate management, upgrade and reset. It deploys anything from a single-node development environment to a production-grade highly available cluster, and assembles applications on top of Kubernetes using cluster images.
+Atoll-K8s is a standalone, zero-dependency binary for managing the full lifecycle of a Kubernetes cluster: installation, scaling, certificate management, upgrade and reset. It deploys anything from a single-node development environment to a production-grade highly available cluster.
 
 This project is a modified version of [labring/sealos](https://github.com/labring/sealos) (commit [`c0f62a9`](https://github.com/labring/sealos/commit/c0f62a9110450f7069707215acf8e77df0815d37)).
 
@@ -31,7 +31,7 @@ This project is a modified version of [labring/sealos](https://github.com/labrin
 - 99-year certificates, with certificate renewal, cluster backup and upgrade.
 - API server high availability through an IPVS local load balancer with a small footprint.
 - Easy node addition and removal.
-- Cluster images are standard OCI images, built with common tools such as docker buildx and composable with storage, databases and other components.
+- Cluster images are standard OCI images, built with common tools such as docker buildx.
 
 ## Quick start
 
@@ -45,8 +45,8 @@ curl -sfL https://raw.githubusercontent.com/cpaas-dev/atoll-k8s/main/scripts/ins
 Pull the cluster images and create a cluster. `run` and the other cluster commands only use local images, so pull them first with `atoll pull`:
 
 ```bash
-atoll pull <registry>/kubernetes:<version> <registry>/helm:<version> <registry>/calico:<version>
-atoll run <registry>/kubernetes:<version> <registry>/helm:<version> <registry>/calico:<version> \
+atoll pull <registry>/kubernetes:<version>
+atoll run <registry>/kubernetes:<version> \
   --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
   --nodes 192.168.64.21,192.168.64.19 \
   -p <ssh-password>
@@ -54,7 +54,7 @@ atoll run <registry>/kubernetes:<version> <registry>/helm:<version> <registry>/c
 
 Add `--plain-http` to `atoll pull` for a registry served over HTTP, and `--insecure` for one with a self-signed certificate. Credentials, mirrors and short names come from `docker login` and `registries.conf`. Offline, pass OCI image archives directly, for example `atoll run kubernetes.tar ...`.
 
-Cluster images must be built for Atoll-K8s: the rootfs lives under `/cpaas` in the image, and atoll exports only that directory. Upstream Sealos cluster images (such as `labring/kubernetes`) depend on `SEALOS_*` environment variables and `sealctl`, and cannot be used directly.
+Cluster images must be built for Atoll-K8s: the rootfs lives under `/cpaas` in the image, and atoll exports only that directory. Images declare their type with the `atoll.io.type` label; only `rootfs` and `patch` are supported, application images such as Helm or Calico are not. Upstream Sealos cluster images (such as `labring/kubernetes`) depend on `SEALOS_*` environment variables and `sealctl`, and cannot be used directly.
 
 atoll has no build command; build cluster images with `docker buildx`, copying the content with `COPY rootfs/ /cpaas/` in the Dockerfile:
 

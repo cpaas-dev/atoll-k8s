@@ -20,18 +20,13 @@ import (
 	"fmt"
 
 	"github.com/cpaas-dev/atoll-k8s/internal/constants"
-	"github.com/cpaas-dev/atoll-k8s/internal/types/v1beta1"
 )
 
-func FormalizeWorkingCommand(clusterName string, imageName string, t v1beta1.ImageType, cmd string) string {
+// FormalizeWorkingCommand returns cmd run in the rootfs work dir of the cluster
+// clusterName, or "" for an empty cmd.
+func FormalizeWorkingCommand(clusterName string, cmd string) string {
 	if cmd == "" {
 		return ""
 	}
-	switch t {
-	case v1beta1.RootfsImage, v1beta1.PatchImage:
-		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetRootWorkDir(clusterName), cmd)
-	case v1beta1.AppImage, "":
-		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetAppWorkDir(clusterName, imageName), cmd)
-	}
-	return ""
+	return fmt.Sprintf(constants.CdAndExecCmd, constants.GetRootWorkDir(clusterName), cmd)
 }

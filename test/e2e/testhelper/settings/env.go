@@ -29,7 +29,6 @@ const (
 	TestDEBUG        = Prefix + "DEBUG"
 	TestInfra        = Prefix + "EST_INFRA"
 	TestClusterName  = Prefix + "CLUSTER_NAME"
-	TestRunImages    = Prefix + "RUN_IMAGES"
 	TestDir          = Prefix + "TEST_DIR"
 	TestAtollBinPath = Prefix + "ATOLL_BIN_PATH"
 )

@@ -26,9 +26,6 @@ var exampleRun = `
 create cluster to your baremetal server, appoint the iplist:
 	atoll run ghcr.io/cpaas-dev/atoll/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 		--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
-  multi image:
-    atoll run ghcr.io/cpaas-dev/atoll/kubernetes:v1.24.0 ghcr.io/cpaas-dev/atoll/calico:v3.24.1 \
-        --masters 192.168.64.2,192.168.64.22,192.168.64.20 --nodes 192.168.64.21,192.168.64.19
   Specify server InfraSSH port :
   All servers use the same InfraSSH port (default port: 22):
 	atoll run ghcr.io/cpaas-dev/atoll/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
@@ -43,11 +40,6 @@ create cluster to your baremetal server, appoint the iplist:
   
   Single kubernetes cluster:
 	atoll run ghcr.io/cpaas-dev/atoll/kubernetes:v1.24.0 --single
-  
-
-create a cluster with custom environment variables:
-	atoll run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
-	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
 `
 
 func newRunCmd() *cobra.Command {
@@ -57,7 +49,7 @@ func newRunCmd() *cobra.Command {
 	}
 	var runCmd = &cobra.Command{
 		Use:     "run",
-		Short:   "Run cloud native applications with ease, with or without a existing cluster",
+		Short:   "Create a cluster from a rootfs image, or apply rootfs and patch images to an existing cluster",
 		Long:    `atoll run ghcr.io/cpaas-dev/atoll/kubernetes:v1.24.0 --masters [arg] --nodes [arg]`,
 		Example: exampleRun,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -81,6 +73,6 @@ func newRunCmd() *cobra.Command {
 	if err := runCmd.Flags().MarkDeprecated("single", "it defaults to running cluster in single mode when there are no master and node"); err != nil {
 		logger.Fatal(err)
 	}
-	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false, "force override app in this cluster")
+	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false, "force override images already applied to this cluster")
 	return runCmd
 }

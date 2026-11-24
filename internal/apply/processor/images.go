@@ -66,6 +66,7 @@ func NewClusterImages(ctx context.Context, clusterName string) (*ClusterImages, 
 
 // Inspect returns the mount of the stored image ref without exporting it: image name,
 // digest, type, labels, env without PATH, and cmd and entrypoint without "/bin/sh -c".
+// Images that are neither rootfs nor patch images are rejected.
 func (c *ClusterImages) Inspect(ctx context.Context, ref string) (v2.MountImage, error) {
 	_, mount, err := c.lookup(ctx, ref)
 	return mount, err
@@ -90,12 +91,14 @@ func (c *ClusterImages) lookup(ctx context.Context, ref string) (clusterimage.Im
 		Labels:     cfg.Config.Labels,
 		Entrypoint: withoutShell(cfg.Config.Entrypoint),
 		Cmd:        withoutShell(cfg.Config.Cmd),
-		Type:       v2.AppImage,
+		Type:       v2.ImageType(maps.GetFromKeys(cfg.Config.Labels, v2.ImageTypeKeys...)),
+	}
+	if mount.Type != v2.RootfsImage && mount.Type != v2.PatchImage {
+		return clusterimage.Image{}, v2.MountImage{}, fmt.Errorf(
+			"image %s has type %q in label %v, only %s and %s images are supported",
+			ref, mount.Type, v2.ImageTypeKeys, v2.RootfsImage, v2.PatchImage)
 	}
 	delete(mount.Env, "PATH")
-	if imageType := maps.GetFromKeys(mount.Labels, v2.ImageTypeKeys...); imageType != "" {
-		mount.Type = v2.ImageType(imageType)
-	}
 	return img, mount, nil
 }
 

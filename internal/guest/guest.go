@@ -16,6 +16,7 @@ package guest
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"strings"
 
@@ -75,15 +76,8 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts
 			if err := eg.Wait(); err != nil {
 				return err
 			}
-		case m.IsApplication():
-			// on run on the first master
-			envs := maps.Merge(m.Env, envGetter.Getenv(cluster.GetMaster0IP()))
-			cmds := formalizeImageCommands(cluster, i, m, envs)
-			if err := execer.CmdAsync(cluster.GetMaster0IPAndPort(),
-				stringsutil.RenderShellWithEnv(strings.Join(cmds, "; "), envs),
-			); err != nil {
-				return err
-			}
+		default:
+			return fmt.Errorf("mount %s of image %s has unsupported type %q", m.Name, m.ImageName, m.Type)
 		}
 	}
 	return nil
@@ -112,8 +106,6 @@ func formalizeImageCommands(
 			cmds,
 			FormalizeWorkingCommand(
 				cluster.Name,
-				m.Name,
-				m.Type,
 				expansion.Expand(m.Entrypoint[i], mapping),
 			),
 		)
@@ -124,8 +116,6 @@ func formalizeImageCommands(
 				cmds,
 				FormalizeWorkingCommand(
 					cluster.Name,
-					m.Name,
-					m.Type,
 					expansion.Expand(cluster.Spec.Command[i], mapping),
 				),
 			)
@@ -136,8 +126,6 @@ func formalizeImageCommands(
 				cmds,
 				FormalizeWorkingCommand(
 					cluster.Name,
-					m.Name,
-					m.Type,
 					expansion.Expand(m.Cmd[i], mapping),
 				),
 			)

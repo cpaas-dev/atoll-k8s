@@ -41,7 +41,7 @@ var _ = Describe("E2E_atoll_run_test", func() {
 			utils.CheckErr(err, fmt.Sprintf("failed to reset cluster for earch cluster: %v", err))
 		})
 		It("atoll run single by containerd", func() {
-			images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
+			images := []string{"labring/kubernetes:v1.25.0"}
 			err = fakeClient.Cluster.Run(images...)
 			utils.CheckErr(err, fmt.Sprintf("failed to Run new cluster for single: %v", err))
 			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", &checkers.FakeOpts{

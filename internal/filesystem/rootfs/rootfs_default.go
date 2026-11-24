@@ -122,18 +122,14 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 	for idx := range ipList {
 		ip := ipList[idx]
 		eg.Go(func() error {
-			var renderingRequired bool
-			for i := range f.mounts {
-				if f.mounts[i].IsRootFs() || f.mounts[i].IsPatch() {
-					renderingRequired = true
-					// contents in rootfs/patch type images cannot be replicated asynchronously
-					if err := copyFn(f.mounts[i], ip, target); err != nil {
-						return err
-					}
-				}
-			}
-			if !renderingRequired {
+			if len(f.mounts) == 0 {
 				return nil
+			}
+			for i := range f.mounts {
+				// contents in rootfs/patch type images cannot be replicated asynchronously
+				if err := copyFn(f.mounts[i], ip, target); err != nil {
+					return err
+				}
 			}
 			envs := envProcessor.Getenv(ip)
 			envs = maps.Merge(rootfsEnvs, envs)
@@ -144,29 +140,6 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 			renderCommand := getRenderCommand(pathResolver.RootFSAtollctlPath(), target)
 
 			return execer.CmdAsync(ip, stringsutil.RenderShellWithEnv(renderCommand, envs))
-		})
-	}
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-
-	eg, _ = errgroup.WithContext(ctx)
-	master0 := cluster.GetMaster0IPAndPort()
-	for idx := range f.mounts {
-		mountInfo := f.mounts[idx]
-		eg.Go(func() error {
-			if mountInfo.IsApplication() {
-				targetDir := constants.GetAppWorkDir(cluster.Name, mountInfo.Name)
-				if err := copyFn(mountInfo, master0, targetDir); err != nil {
-					return err
-				}
-				if err := syncAtollctlToRootfs(execer, master0, localAtollctlPath, pathResolver.RootFSAtollctlPath()); err != nil {
-					logger.Warn("failed to sync atollctl to %s: %v", master0, err)
-				}
-				renderCommand := getRenderCommand(pathResolver.RootFSAtollctlPath(), targetDir)
-				return execer.CmdAsync(master0, stringsutil.RenderShellWithEnv(renderCommand, mountInfo.Env))
-			}
-			return nil
 		})
 	}
 	return eg.Wait()

@@ -45,7 +45,11 @@ func TestScaleRetainsCommittedRootfsFromLegacyImageList(t *testing.T) {
 		},
 	}
 
-	if err := MountClusterImages(context.Background(), newTestClusterImages(t), cluster, true); err != nil {
+	images := newTestClusterImages(t)
+	if err := DropObsoleteRootfs(context.Background(), images, cluster); err != nil {
+		t.Fatal(err)
+	}
+	if err := MountClusterImages(context.Background(), images, cluster); err != nil {
 		t.Fatal(err)
 	}
 
