@@ -128,3 +128,7 @@ containerd/
 dist/
 tools/
 vendor/
+
+### MkDocs ###
+.venv/
+site/

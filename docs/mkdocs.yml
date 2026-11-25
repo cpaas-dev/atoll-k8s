@@ -1,0 +1,65 @@
+site_name: Atoll-K8s
+site_url: https://cpaas-dev.github.io/atoll-k8s/
+site_description: Deploy and maintain Kubernetes clusters with independently upgradable registry, container runtime and Kubernetes images.
+repo_name: cpaas-dev/atoll-k8s
+repo_url: https://github.com/cpaas-dev/atoll-k8s
+edit_uri: edit/main/docs/v1/
+docs_dir: v1
+
+theme:
+  name: material
+  language: zh
+  logo: assets/images/cpaas.svg
+  favicon: assets/images/cpaas.svg
+  # Use system fonts; Google Fonts is often unreachable from the deployment network.
+  font: false
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: 切换到暗色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: 切换到亮色模式
+  features:
+    - content.code.copy
+    - navigation.footer
+    - navigation.sections
+    - navigation.tabs
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - toc.follow
+
+# Search is built in; its language follows theme.language.
+plugins:
+  # Navigation comes from v1/**/.nav.yml: section titles are set there, pages are
+  # ordered by the numeric prefixes of their file names and titled by their first heading.
+  # Prefixes of dirs and files step by 10 (010, 020, ...), so a page can be inserted
+  # between two others without renaming them.
+  - awesome-nav
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - toc:
+      permalink: true
+      # Keep CJK characters in heading anchors so links like #镜像路径规则 resolve.
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./docs/img/cpaas.svg" alt="CPaaS" width="240" />
+  <img src="./docs/v1/assets/images/cpaas.svg" alt="CPaaS" width="240" />
 </p>
 
 <h1 align="center">Atoll-K8s</h1>
